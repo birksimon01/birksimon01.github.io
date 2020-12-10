@@ -6,7 +6,7 @@ hiderelated: true
 hidediscus: true
 ---
 
-<center>
+<center style="width:100%">
 <object data="/resume.pdf" type="application/pdf" >
 <embed src="/resume.pdf" type="application/pdf" style="min-height:200vh;width:100%"/>
 </object>
