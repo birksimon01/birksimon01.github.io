@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="Simon Birk" />
+    
+    <link rel="shortcut icon" type="image/x-icon" href="/img/favicon.ico">
+    <title>Project 1: Exploratory Data Analysis</title>
+    <meta name="generator" content="Hugo 0.79.0" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="/css/main.css" />
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,400,200bold,400old" />
+    
+    <!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+    
+  </head>
+
+  <body>
+    <div id="wrap">
+      
+      <nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="/"><i class="fa fa-home"></i></a>
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <div class="navbar-collapse collapse" id="navbar">
+      <ul class="nav navbar-nav navbar-right">
+      
+        
+        <li><a href="/post/">BLOG</a></li>
+        
+        <li><a href="/projects/">PROJECTS</a></li>
+        
+        <li><a href="/resume/">RESUME</a></li>
+        
+      
+      </ul>
+    </div>
+  </div>
+</nav>
+
+      <div class="container">
+        <div class="blog-post">
+          <h3>
+            <strong><a href="/project/project1/">Project 1: Exploratory Data Analysis</a></strong>
+          </h3>
+        </div>
+ 
+<div class="blog-title">
+          <h4>
+         January 1, 0001 
+            &nbsp;&nbsp;
+            
+          </h4>
+        </div>
+
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <div class="blogpost">
+              
+<link href="/rmarkdown-libs/anchor-sections/anchor-sections.css" rel="stylesheet" />
+<script src="/rmarkdown-libs/anchor-sections/anchor-sections.js"></script>
+
+
+<p>#Simon Birk SLB4868</p>
+<div id="data-wrangling-and-data-exploration" class="section level2">
+<h2>Data Wrangling and Data Exploration</h2>
+<div id="instructions" class="section level3">
+<h3>Instructions</h3>
+<p>A knitted R Markdown document (ideally HTML) and the raw R Markdown file (as .Rmd) should both be submitted to Canvas by 11:59pm on 10/11/2020. These two documents will be graded jointly, so they must be consistent (i.e., don’t change the R Markdown file without also updating the knitted document).</p>
+<p>The text of the document should provide a narrative structure around your code/output. All results presented must have corresponding code. Any answers/results/plots etc. given without the corresponding R code that generated the result will not be considered. Furthermore, all code contained in your final project document must work correctly (knit early, knit often)! Please do not include any extraneous code or code which produces error messages. (Code that produces warnings is acceptable, as long as you understand what the warnings mean!)</p>
+</div>
+<div id="find-data" class="section level3">
+<h3>Find data:</h3>
+<p>Find two (!) datasets with one variable in common (e.g., dates, times, states, counties, countries, sports players), both with at least 50 observations (i.e., rows) in each. Please think very carefully about whether it makes sense to combine your datasets! If you find one dataset with 50 patients and it has their age, and you find another dataset with 50 <em>different</em> patients that has their ages, it makes no sense to join them based on age (you would just be pairing up random people of the same age).</p>
+<p>When combined, the resulting/final dataset must have <strong>at least 4 different variables (at least 3 numeric) in addition to the common variable</strong> (i.e., five variables total).</p>
+<p>You can have as many variables as you would like! If you found two datasets that you like but they don’t have enough variables, find a third dataset with the same common variable and join all three.</p>
+<ol style="list-style-type: decimal">
+<li>Producing the fund holdings dataset in R using an outer/full join</li>
+</ol>
+<pre class="r"><code>library(tidyverse)
+
+fund_tickers = c(&quot;DIA&quot;, &quot;DIM&quot;, &quot;EEM&quot;, &quot;IHI&quot;, &quot;MGK&quot;, &quot;OGIG&quot;, &quot;SMOG&quot;, 
+    &quot;SOXX&quot;, &quot;SPY&quot;, &quot;USMV&quot;, &quot;VIG&quot;, &quot;VOO&quot;, &quot;VOX&quot;, &quot;VTI&quot;, &quot;VTV&quot;, 
+    &quot;VUG&quot;, &quot;VYM&quot;, &quot;WCLD&quot;, &quot;XLK&quot;)
+
+raw_url &lt;- function(ticker) {
+    url &lt;- paste(&quot;https://raw.githubusercontent.com/birksimon01/data/main/&quot;, 
+        ticker, &quot;-holdings.csv&quot;, sep = &quot;&quot;)
+    return(url)
+}
+
+holdings_df &lt;- read_csv(&quot;https://raw.githubusercontent.com/birksimon01/data/main/DGRW-holdings.csv&quot;, 
+    skip = 12) %&gt;% mutate(Fund = &quot;DGRW&quot;)
+
+for (ticker in fund_tickers) {
+    holdings_df_add &lt;- read_csv(raw_url(ticker), skip = 12) %&gt;% 
+        mutate(Fund = ticker)
+    holdings_df &lt;- holdings_df %&gt;% full_join(holdings_df_add)
+}
+
+# checking to see if it worked
+holdings_df %&gt;% group_by(Fund) %&gt;% summarise(num_holdings = n()) %&gt;% 
+    head()</code></pre>
+<pre><code>## # A tibble: 6 x 2
+##   Fund  num_holdings
+##   &lt;chr&gt;        &lt;int&gt;
+## 1 DGRW           265
+## 2 DIA             31
+## 3 DIM            494
+## 4 EEM           1191
+## 5 IHI             64
+## 6 MGK            101</code></pre>
+<pre class="r"><code># saving csv of all the symbols (taken out for the final
+# knitting) --&gt; using tool to grab more stuff specific to the
+# stock
+holdings_df %&gt;% select(-Fund, -Weighting) %&gt;% unique() %&gt;% arrange(desc(Symbol))</code></pre>
+<pre><code>## # A tibble: 3,412 x 2
+##    Holding                       Symbol
+##    &lt;chr&gt;                         &lt;chr&gt; 
+##  1 Zuora Inc                     ZUO   
+##  2 Zoetis Inc                    ZTS   
+##  3 ZTO Express (Cayman) Inc      ZTO   
+##  4 Zscaler Inc                   ZS    
+##  5 Zardoya Otis SA               ZOT   
+##  6 Zynga Inc                     ZNGA  
+##  7 Zoom Video Communications Inc ZM    
+##  8 Zai Lab Ltd                   ZLAB  
+##  9 Zions Bancorporation NA       ZION  
+## 10 ZoomInfo Technologies Inc     ZI    
+## # … with 3,402 more rows</code></pre>
+<pre class="r"><code># loading in the stock specific stuff post-tool + omit NAs
+stock_info &lt;- read_csv(&quot;https://raw.githubusercontent.com/birksimon01/data/main/stocks.csv&quot;) %&gt;% 
+    na.omit()</code></pre>
+<p>Grabbing the other two datasets produced by the python script</p>
+<pre class="r"><code>fund_data &lt;- read_csv(&quot;https://raw.githubusercontent.com/birksimon01/data/main/fund_data.csv&quot;) %&gt;% 
+    select(-X1)
+
+portfolio &lt;- read_csv(&quot;https://raw.githubusercontent.com/birksimon01/data/main/holdings.csv&quot;) %&gt;% 
+    select(-X1)</code></pre>
+</div>
+<div id="guidelines" class="section level3">
+<h3>Guidelines</h3>
+<ol style="list-style-type: decimal">
+<li>If the datasets are not tidy, you will need to reshape them so that every observation has its own row and every variable its own column. If the datasets are both already tidy, you will make them untidy with <code>pivot_wider()/spread()</code> and then tidy them again with <code>pivot_longer/gather()</code> to demonstrate your use of the functions. It’s fine to wait until you have your descriptives to use these functions (e.g., you might want to pivot_wider() to rearrange the data to make your descriptive statistics easier to look at); it’s fine long as you use them at least once!</li>
+</ol>
+<pre class="r"><code># Pivot wide to see the funds vs holdings, attempting to
+# arrange the symbols according to overall fund presence.
+
+# grabbing vector of symbols present in most
+symbol_vector &lt;- holdings_df %&gt;% group_by(Symbol) %&gt;% summarize(num_funds = n()) %&gt;% 
+    arrange(-num_funds) %&gt;% pull(Symbol)
+
+# grabbing vector of funds with most holdings
+fund_vector &lt;- holdings_df %&gt;% group_by(Fund) %&gt;% summarize(num_holdings = n()) %&gt;% 
+    arrange(-num_holdings) %&gt;% pull(Fund)
+
+# sorting columns + rows according to vectors above to be
+# most descriptive
+descriptive_wide_df &lt;- holdings_df %&gt;% select(-Holding) %&gt;% pivot_wider(names_from = Symbol, 
+    values_from = Weighting) %&gt;% select(c(Fund, symbol_vector)) %&gt;% 
+    arrange(match(Fund, fund_vector))
+
+descriptive_wide_df %&gt;% head()</code></pre>
+<pre><code>## # A tibble: 6 x 3,376
+##   Fund  CASH   MSFT  TXN   ADP   BMY   INTC  V     AAPL  ADBE  ADI   AVGO  CLX  
+##   &lt;chr&gt; &lt;chr&gt;  &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;
+## 1 VTI   0.038… 4.73… 0.36… 0.16… 0.41… 0.65… 0.99… 5.31… 0.72… 0.13… 0.43… 0.08…
+## 2 EEM   1.210… &lt;NA&gt;  &lt;NA&gt;  &lt;NA&gt;  &lt;NA&gt;  &lt;NA&gt;  &lt;NA&gt;  &lt;NA&gt;  &lt;NA&gt;  &lt;NA&gt;  &lt;NA&gt;  &lt;NA&gt; 
+## 3 SPY   0.027… 5.67… 0.46… 0.21… 0.48… 0.78… 1.21… 6.63… 0.84… 0.15… 0.53… 0.09…
+## 4 VOO   0.023% 5.67… 0.46… 0.21… 0.48… 0.78… 1.21… 6.63… 0.85… 0.15… 0.52… 0.09…
+## 5 DIM   1.713… &lt;NA&gt;  &lt;NA&gt;  &lt;NA&gt;  &lt;NA&gt;  &lt;NA&gt;  &lt;NA&gt;  &lt;NA&gt;  &lt;NA&gt;  &lt;NA&gt;  &lt;NA&gt;  &lt;NA&gt; 
+## 6 VYM   0.028… &lt;NA&gt;  1.33… 0.60… 1.38… 2.22… &lt;NA&gt;  &lt;NA&gt;  &lt;NA&gt;  &lt;NA&gt;  1.45… 0.27…
+## # … with 3,363 more variables: CMCSA &lt;chr&gt;, CRM &lt;chr&gt;, DHR &lt;chr&gt;, HSY &lt;chr&gt;,
+## #   INTU &lt;chr&gt;, KLAC &lt;chr&gt;, MCD &lt;chr&gt;, MMC &lt;chr&gt;, MRK &lt;chr&gt;, NKE &lt;chr&gt;,
+## #   PAYX &lt;chr&gt;, PG &lt;chr&gt;, QCOM &lt;chr&gt;, SYK &lt;chr&gt;, TRV &lt;chr&gt;, VZ &lt;chr&gt;,
+## #   ACN &lt;chr&gt;, AMAT &lt;chr&gt;, AMGN &lt;chr&gt;, APD &lt;chr&gt;, ATVI &lt;chr&gt;, BAX &lt;chr&gt;,
+## #   BDX &lt;chr&gt;, BF.B &lt;chr&gt;, BR &lt;chr&gt;, CAT &lt;chr&gt;, CHRW &lt;chr&gt;, CL &lt;chr&gt;,
+## #   COST &lt;chr&gt;, CSCO &lt;chr&gt;, DIS &lt;chr&gt;, ECL &lt;chr&gt;, FIS &lt;chr&gt;, HD &lt;chr&gt;,
+## #   IBM &lt;chr&gt;, ITW &lt;chr&gt;, JKHY &lt;chr&gt;, JNJ &lt;chr&gt;, LHX &lt;chr&gt;, LMT &lt;chr&gt;,
+## #   LRCX &lt;chr&gt;, MA &lt;chr&gt;, MCHP &lt;chr&gt;, NEE &lt;chr&gt;, NOW &lt;chr&gt;, NVDA &lt;chr&gt;,
+## #   ORCL &lt;chr&gt;, PEP &lt;chr&gt;, TGT &lt;chr&gt;, TMUS &lt;chr&gt;, UNH &lt;chr&gt;, UPS &lt;chr&gt;,
+## #   WM &lt;chr&gt;, WMT &lt;chr&gt;, XLNX &lt;chr&gt;, ABT &lt;chr&gt;, AEP &lt;chr&gt;, AJG &lt;chr&gt;,
+## #   AMD &lt;chr&gt;, APH &lt;chr&gt;, BBY &lt;chr&gt;, BEN &lt;chr&gt;, CB &lt;chr&gt;, CE &lt;chr&gt;, CHD &lt;chr&gt;,
+## #   CHTR &lt;chr&gt;, CINF &lt;chr&gt;, CME &lt;chr&gt;, CMI &lt;chr&gt;, CMS &lt;chr&gt;, CPB &lt;chr&gt;,
+## #   CTSH &lt;chr&gt;, CTXS &lt;chr&gt;, CVX &lt;chr&gt;, DG &lt;chr&gt;, DOW &lt;chr&gt;, EA &lt;chr&gt;,
+## #   EBAY &lt;chr&gt;, EMR &lt;chr&gt;, ES &lt;chr&gt;, FANG &lt;chr&gt;, FAST &lt;chr&gt;, FB &lt;chr&gt;,
+## #   FISV &lt;chr&gt;, GD &lt;chr&gt;, GILD &lt;chr&gt;, GIS &lt;chr&gt;, GOOG &lt;chr&gt;, GOOGL &lt;chr&gt;,
+## #   GPC &lt;chr&gt;, GPN &lt;chr&gt;, HAS &lt;chr&gt;, HON &lt;chr&gt;, IFF &lt;chr&gt;, IPG &lt;chr&gt;,
+## #   JNPR &lt;chr&gt;, KO &lt;chr&gt;, KR &lt;chr&gt;, LIN &lt;chr&gt;, LLY &lt;chr&gt;, …</code></pre>
+<pre class="r"><code># retidying
+descriptive_wide_df %&gt;% pivot_longer(-Fund, names_to = &quot;Symbol&quot;, 
+    values_to = &quot;Weight&quot;) %&gt;% mutate(Weight = substring(Weight, 
+    1, nchar(Weight) - 1)) %&gt;% mutate(Weight = as.numeric(Weight)) %&gt;% 
+    glimpse()</code></pre>
+<pre><code>## Rows: 67,500
+## Columns: 3
+## $ Fund   &lt;chr&gt; &quot;VTI&quot;, &quot;VTI&quot;, &quot;VTI&quot;, &quot;VTI&quot;, &quot;VTI&quot;, &quot;VTI&quot;, &quot;VTI&quot;, &quot;VTI&quot;, &quot;VTI&quot;,…
+## $ Symbol &lt;chr&gt; &quot;CASH&quot;, &quot;MSFT&quot;, &quot;TXN&quot;, &quot;ADP&quot;, &quot;BMY&quot;, &quot;INTC&quot;, &quot;V&quot;, &quot;AAPL&quot;, &quot;ADB…
+## $ Weight &lt;dbl&gt; 0.0382, 4.7315, 0.3649, 0.1692, 0.4184, 0.6545, 0.9979, 5.3177…</code></pre>
+<ol start="2" style="list-style-type: decimal">
+<li><p>Join your 2+ separate data sources into a single dataset based on a common ID variable! If you can’t find a good pair datasets to join, you may split one main dataset into two different datasets with a common ID variable in each, and then join them back together based on that common ID, but this is obviously less than ideal.</p>
+<ul>
+<li>You will document the type of join that you do (left/right/inner/full), including a discussion of how many observations were in each dataset, which observations in each dataset were dropped (if any) and why you chose this particular join.</li>
+</ul></li>
+</ol>
+<p>We are carrying out a right join by the ‘Fund’ variable, which added AUM and Expense ratio to each observation for a certainfund in the fund_holdings. I chose right join because the fund characteristics should add to fund as extra columns matched by the fund variable. No observations are dropped.</p>
+<pre class="r"><code># producing full etf dataset using right join. makes no
+# difference right vs. left in this case.
+etf_df &lt;- holdings_df %&gt;% right_join(fund_data, by = &quot;Fund&quot;)
+
+# another join to add some stock info. Don&#39;t believe anything
+# is dropped in this one either. Some of the stocks don&#39;t
+# have data though.
+etf_df &lt;- etf_df %&gt;% left_join(stock_info, by = &quot;Symbol&quot;) %&gt;% 
+    select(Symbol, Holding, Industry, Marketcap, Weighting, Fund, 
+        AUM, Expense_ratio) %&gt;% mutate(Weighting = as.numeric(substring(Weighting, 
+    1, nchar(Weighting) - 1))/100)
+
+# the full dataset has been put together, taking data from
+# many sources.
+etf_df %&gt;% head()</code></pre>
+<pre><code>## # A tibble: 6 x 8
+##   Symbol Holding    Industry      Marketcap Weighting Fund     AUM Expense_ratio
+##   &lt;chr&gt;  &lt;chr&gt;      &lt;chr&gt;             &lt;dbl&gt;     &lt;dbl&gt; &lt;chr&gt;  &lt;dbl&gt;         &lt;dbl&gt;
+## 1 AAPL   Apple Inc  Computers, P…   2.06e12    0.0687 DGRW  4.43e6          0.28
+## 2 MSFT   Microsoft… Software &amp; I…   1.66e12    0.0556 DGRW  4.43e6          0.28
+## 3 VZ     Verizon C… Telecommunic…   2.40e11    0.0534 DGRW  4.43e6          0.28
+## 4 PG     Procter &amp;… Personal &amp; H…   3.59e11    0.0443 DGRW  4.43e6          0.28
+## 5 MRK    Merck &amp; C… Pharmaceutic…   2.02e11    0.0310 DGRW  4.43e6          0.28
+## 6 MRK    Merck &amp; C… Pharmaceutic…   2.02e11    0.0310 DGRW  4.43e6          0.28</code></pre>
+<ol start="3" style="list-style-type: decimal">
+<li><p>Create summary statistics</p>
+<ul>
+<li>Use <em>all six</em> core <code>dplyr</code> functions (<code>filter, select, arrange, group_by, mutate, summarize</code>) to manipulate and explore your dataset. For mutate, create a new variable that is a function of at least one other variable, preferably using a dplyr vector function (see dplyr cheatsheet). It’s totally fine to use the <code>_if</code>, <code>_at</code>, <code>_all</code> versions of mutate/summarize instead (indeed, it is encouraged if you have lots of variables)</li>
+</ul></li>
+</ol>
+<p>Under number 1 was an integrated solution to untidying and retidying that explored a 2d visualization of this dataset, sorting by funds with the most holdings on one axis and symbols present in the highest number of funds on the other. Only one that wasn’t used was filter. Let’s find out how prevalent stocks in the DIA fund are by using a modified pipeline from part 1.</p>
+<pre class="r"><code>holdings_df %&gt;% group_by(Symbol) %&gt;% summarize(Fund, num_funds = n()) %&gt;% 
+    arrange(-num_funds) %&gt;% filter(Fund == &quot;DIA&quot;) %&gt;% head()</code></pre>
+<pre><code>## # A tibble: 6 x 3
+## # Groups:   Symbol [6]
+##   Symbol Fund  num_funds
+##   &lt;chr&gt;  &lt;chr&gt;     &lt;int&gt;
+## 1 CASH   DIA          20
+## 2 MSFT   DIA          11
+## 3 INTC   DIA          10
+## 4 V      DIA          10
+## 5 AAPL   DIA           9
+## 6 CRM    DIA           9</code></pre>
+<pre><code>- Create summary statistics (`mean, sd, var, n, quantile, min, max, n_distinct, cor`, etc) for each of your numeric variables both overall and after grouping by one of your categorical variables (either together or one-at-a-time; if you have two categorical variables, try to include at least one statistic based on a grouping of two categorical variables simultaneously). If you do not have any categorical variables, create one using mutate (e.g., with `case_when` or `ifelse`) to satisfy the `group_by` requirements above. Ideally, you will find a way to show these summary statistics in an easy-to-read table (e.g., by reshaping). (You might explore the kable package for making pretty tables!) If you have lots of numeric variables (e.g., 10+), or your categorical variables have too many categories, just pick a few (either numeric variables or categories of a categorical variable) and summarize based on those. It would be a good idea to show a correlation matrix for your numeric variables (you will need it to make one of your plots).</code></pre>
+<p>Let’s find the average prevalence of stock tickers in each fund compared to every one of the 20 funds in the dataset. It looks like DIA has lots of very common companies, which makes sense given it’s supposed to be one of the indices that is representative of US economic performance, using relatively few companies (30) to provide that representation.</p>
+<pre class="r"><code>holdings_df %&gt;% group_by(Symbol) %&gt;% summarize(Fund, num_funds = n()) %&gt;% 
+    arrange(-num_funds) %&gt;% group_by(Fund) %&gt;% summarize(average_prevalence = mean(num_funds), 
+    stdev_prevalence = sd(num_funds), num_holdings = n()) %&gt;% 
+    arrange(-average_prevalence)</code></pre>
+<pre><code>## # A tibble: 20 x 4
+##    Fund  average_prevalence stdev_prevalence num_holdings
+##    &lt;chr&gt;              &lt;dbl&gt;            &lt;dbl&gt;        &lt;int&gt;
+##  1 DIA                 8.35            2.55            31
+##  2 XLK                 7.25            2.20            73
+##  3 MGK                 7.14            2.06           101
+##  4 USMV                6.63            1.94           195
+##  5 SOXX                5.87            4.07            31
+##  6 VOO                 5.80            1.66           504
+##  7 SPY                 5.79            1.67           506
+##  8 VUG                 5.56            2.22           254
+##  9 VTV                 5.54            1.75           327
+## 10 DGRW                5.35            2.51           265
+## 11 VIG                 5.09            2.80           212
+## 12 VYM                 3.97            2.51           414
+## 13 OGIG                3.90            3.05            72
+## 14 IHI                 3.41            3.14            64
+## 15 WCLD                3.36            2.93            55
+## 16 VOX                 3.08            2.84           107
+## 17 VTI                 2.95            2.28          1567
+## 18 SMOG                2.87            3.53            31
+## 19 DIM                 1.24            1.19           494
+## 20 EEM                 1.07            0.632         1191</code></pre>
+<p>Then lets look at the minimum and max weightings to any ticker.</p>
+<pre class="r"><code>etf_df %&gt;% summarize(min_weighting = min(Weighting), max_weighting = max(Weighting))</code></pre>
+<pre><code>## # A tibble: 1 x 2
+##   min_weighting max_weighting
+##           &lt;dbl&gt;         &lt;dbl&gt;
+## 1      -0.00170         0.236</code></pre>
+<ol start="4" style="list-style-type: decimal">
+<li><p>Make visualizations (three plots)</p>
+<ul>
+<li>Make a correlation heatmap of your numeric variables</li>
+</ul></li>
+</ol>
+<pre class="r"><code>library(reshape2)
+library(ggplot2)
+cor_matrix &lt;- etf_df %&gt;% rename(ExpenseRatio = Expense_ratio, 
+    MarketCap = Marketcap) %&gt;% na.omit() %&gt;% select(MarketCap, 
+    Weighting, AUM, ExpenseRatio) %&gt;% cor()
+
+cor_matrix[upper.tri(cor_matrix)] &lt;- NA
+
+cor_matrix %&gt;% melt() %&gt;% ggplot(aes(x = Var1, y = Var2, fill = value)) + 
+    geom_tile() + labs(x = &quot;Variable 1&quot;, y = &quot;Variable 2&quot;, title = &quot;Correlation Matrix for Numeric Variables&quot;) + 
+    theme_classic() + scale_color_gradient2(low = &quot;red&quot;, high = &quot;purple&quot;, 
+    guide = &quot;colorbar&quot;, aesthetics = &quot;fill&quot;, midpoint = 0)</code></pre>
+<p><img src="/project/project1_files/figure-html/unnamed-chunk-8-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre><code>-  Create at least two additional plots of your choice with ggplot that highlight some of the more interesting features of your data.
+- Each plot (besides the heatmap) should have at least three variables mapped to separate aesthetics
+- Each should use different geoms (don&#39;t do two geom_bars)
+- At least one plot should include `stat=&quot;summary&quot;`
+- Each plot should include a supporting paragraph describing the relationships that are being visualized and any trends that are apparent
+    - It is fine to include more, but limit yourself to 4. Plots should avoid being redundant! Four bad plots will get a lower grade than two good plots, all else being equal.
+- Make them pretty! Use correct labels, etc.</code></pre>
+<p>Something interesting this plot shows is that there is a pretty clear linear relationship between number of funds a specific stock is present in and the log10-transformed market cap of a company.</p>
+<pre class="r"><code>holdings_df %&gt;% group_by(Symbol) %&gt;% summarize(Fund, num_funds = n()) %&gt;% 
+    arrange(-num_funds) %&gt;% select(-Fund) %&gt;% unique() %&gt;% filter(Symbol != 
+    &quot;CASH&quot;) %&gt;% left_join(stock_info, by = &quot;Symbol&quot;) %&gt;% select(-Name, 
+    -Symbol) %&gt;% filter(num_funds &gt; 1) %&gt;% na.omit() %&gt;% ggplot(aes(y = Marketcap, 
+    x = num_funds)) + geom_point(color = &quot;darkgrey&quot;) + scale_y_log10() + 
+    geom_smooth(method = &quot;lm&quot;) + stat_summary(fun = mean, size = 5, 
+    shape = 0, geom = &quot;point&quot;) + labs(x = &quot;Number of funds including a public company&quot;, 
+    y = &quot;Market capitalization&quot;, title = &quot;Relationship between ETF inclusion and market capitalization&quot;)</code></pre>
+<p><img src="/project/project1_files/figure-html/unnamed-chunk-9-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>Let’s see how much equity of the top five industries are owned in these funds and break them down by-fund.</p>
+<pre class="r"><code>top_industries &lt;- etf_df %&gt;% na.omit() %&gt;% group_by(Industry) %&gt;% 
+    summarize(total_weight = sum(Weighting)) %&gt;% arrange(-total_weight) %&gt;% 
+    slice(1:5) %&gt;% pull(Industry)
+
+etf_df %&gt;% mutate(company_equity = Weighting * AUM * 1000) %&gt;% 
+    na.omit() %&gt;% subset(Industry %in% top_industries) %&gt;% ggplot(aes(x = Industry, 
+    y = company_equity, fill = Fund)) + geom_bar(stat = &quot;identity&quot;) + 
+    theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 10, 
+        hjust = 1)) + labs(y = &quot;Equity owned by these funds&quot;, 
+    title = &quot;Equity owned by fund in each of the five top sectors&quot;)</code></pre>
+<p><img src="/project/project1_files/figure-html/unnamed-chunk-10-1.png" width="672" style="display: block; margin: auto;" /></p>
+<ol start="5" style="list-style-type: decimal">
+<li><p>Perform k-means/PAM clustering or PCA on (at least) 3 of your numeric variables.</p>
+<ul>
+<li><p>Include all steps as we discuss in class, including a visualization.</p></li>
+<li><p>If you don’t have at least 3 numeric variables, or you want to cluster based on categorical variables too, convert them to factors in R, generate Gower’s dissimilarity matrix on the data, and do PAM clustering on the dissimilarities.</p></li>
+<li><p>Show how you chose the final number of clusters/principal components</p></li>
+<li><p>Interpret the final clusters/principal components</p></li>
+<li><p>For every step, document what your code does (in words) and what you see in the data!</p></li>
+</ul></li>
+</ol>
+<p>In order to determine the number of clusters, we first need to find the silhouette widths of the PAM clustering with n clusters, then choose the one with greatest sil_width. We find that to be 4, although 2-5 are essentially the same. Despite this, lowering the cluster number to 2 increases the ease of later steps.</p>
+<pre class="r"><code>library(cluster)
+
+sil_width &lt;- vector()
+
+for (i in 2:10) {
+    pam1 &lt;- etf_df %&gt;% na.omit() %&gt;% select(-Symbol, -Holding, 
+        -Industry, -Fund) %&gt;% pam(i)
+    sil_width[i] &lt;- pam1$silinfo$avg.width
+}
+ggplot() + geom_line(aes(x = 2:10, y = sil_width[2:10]))</code></pre>
+<p><img src="/project/project1_files/figure-html/unnamed-chunk-11-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>Let’s visualize all the combinations when pairing the 4 variables.</p>
+<pre class="r"><code>library(GGally)
+
+pam_optimal &lt;- etf_df %&gt;% na.omit() %&gt;% select(-Symbol, -Holding, 
+    -Industry, -Fund) %&gt;% pam(2)
+
+etf_df %&gt;% na.omit() %&gt;% mutate(cluster = as.factor(pam_optimal$clustering)) %&gt;% 
+    ggpairs(columns = c(&quot;Marketcap&quot;, &quot;Weighting&quot;, &quot;AUM&quot;, &quot;Expense_ratio&quot;), 
+        aes(color = cluster))</code></pre>
+<p><img src="/project/project1_files/figure-html/unnamed-chunk-12-1.png" width="672" style="display: block; margin: auto;" />
+The which=2 plot shows average silhouette width of 1 without showing anything in the graph. Taking that at face value, we’ve found a strong structure. Not sure why it didn’t show the bars. Here is a visualization of the two clusters across the two principal components.</p>
+<pre class="r"><code>plot(pam_optimal, which = 1, main = &quot;Cluster plot of first 2 components&quot;)</code></pre>
+<p><img src="/project/project1_files/figure-html/unnamed-chunk-13-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>Here we are getting the eigenvalues for our principal components (directions in which data has the most variance) exploring PCA.</p>
+<pre class="r"><code># omit NAs, remove non-numerics
+etf_df_prep &lt;- etf_df %&gt;% na.omit() %&gt;% select(-Symbol, -Holding, 
+    -Industry, -Fund)
+
+# passing correlation matrix into eigen() to get
+# eigenvectors, a feature of that matrix. Eigenvectors point
+# in the direction of the most vector. i.e. your first
+# principal component direction. And second, and third, etc.
+# Our eigenvalues will tell us how much variance exists in
+# each direction.
+eig1 &lt;- etf_df_prep %&gt;% cor() %&gt;% eigen()
+
+# scaling our prepped etf dataframe and multiplying by the
+# eigenvector with matrix math to change the coordinate
+# system to match the principal components.
+PCAscores &lt;- etf_df_prep %&gt;% scale %*% eig1$vectors
+
+# Here we can see and INTERPRET our PCs. First PC looks for
+# low AUM, high expense ratio, and high weightings(but less
+# so than expense_ratio) what this seems to be singling out
+# is niche ETFs included. Component two looks for high market
+# cap and low weighting, a marker of industry-centered ETFs.
+etf_df_prep %&gt;% scale %&gt;% princomp() %&gt;% summary(loadings = T)</code></pre>
+<pre><code>## Importance of components:
+##                           Comp.1    Comp.2    Comp.3    Comp.4
+## Standard deviation     1.2654344 1.0052449 0.9587852 0.6842341
+## Proportion of Variance 0.4004024 0.2526744 0.2298582 0.1170649
+## Cumulative Proportion  0.4004024 0.6530768 0.8829351 1.0000000
+## 
+## Loadings:
+##               Comp.1 Comp.2 Comp.3 Comp.4
+## Marketcap      0.158  0.854  0.489       
+## Weighting      0.313 -0.499  0.795 -0.143
+## AUM           -0.672         0.190 -0.711
+## Expense_ratio  0.652  0.120 -0.305 -0.684</code></pre>
+<pre class="r"><code># PC1 accounts for 40% (1.6/4) of the variance, PC2 25%
+# (1/4), PC3 ~23% (0.91/4), PC4 ~12% (0.47/4)
+eig1$values</code></pre>
+<pre><code>## [1] 1.6016098 1.0106975 0.9194329 0.4682598</code></pre>
+<pre class="r"><code>etf_df %&gt;% na.omit() %&gt;% mutate(PC1 = PCAscores[, 1], PC2 = PCAscores[, 
+    2], cluster = as.factor(pam_optimal$clustering)) %&gt;% ggplot(aes(PC1, 
+    PC2, color = cluster)) + geom_point()</code></pre>
+<p><img src="/project/project1_files/figure-html/unnamed-chunk-14-1.png" width="672" style="display: block; margin: auto;" />
+While most of the variance falls along PC1, it seems that at low PC1 values, PC2 is the determining factor. There seems to be a very characteristic trend for cluster 2. Looking at the data it’s a pretty interesting departure between clusters here. Let’s investigate a little by changing our plot to color by Fund</p>
+<pre class="r"><code>etf_df_mut &lt;- etf_df %&gt;% na.omit() %&gt;% mutate(PC1 = PCAscores[, 
+    1], PC2 = PCAscores[, 2], cluster = as.factor(pam_optimal$clustering))
+
+etf_df_mut %&gt;% ggplot(aes(PC1, PC2, color = Fund)) + geom_point()</code></pre>
+<p><img src="/project/project1_files/figure-html/unnamed-chunk-15-1.png" width="672" style="display: block; margin: auto;" />
+We find that almost the entirety of cluster 2 that we can see is from EEM, the emerging markets fund, a stark departure from the rest of the funds and the direction that the rest of the funds seems to all align to. Let’s see whats common to all by listing out the holdings from the cluster.</p>
+<pre class="r"><code>etf_df_mut %&gt;% na.omit() %&gt;% filter(cluster == 2) %&gt;% head()</code></pre>
+<pre><code>## # A tibble: 6 x 11
+##   Symbol Holding Industry Marketcap Weighting Fund     AUM Expense_ratio   PC1
+##   &lt;chr&gt;  &lt;chr&gt;   &lt;chr&gt;        &lt;dbl&gt;     &lt;dbl&gt; &lt;chr&gt;  &lt;dbl&gt;         &lt;dbl&gt; &lt;dbl&gt;
+## 1 BBRI   Bank R… Banking…   4.01e14  0.00178  EEM   2.33e7          0.68 -9.88
+## 2 207940 Samsun… Pharmac…   4.55e13  0.00155  EEM   2.33e7          0.68 -2.93
+## 3 BMRI   Bank M… Banking…   2.58e14  0.00100  EEM   2.33e7          0.68 -7.06
+## 4 ASII   Astra … Automob…   2.00e14  0.000971 EEM   2.33e7          0.68 -5.92
+## 5 CPIN   Charoe… Food &amp; …   9.76e13  0.000459 EEM   2.33e7          0.68 -3.91
+## 6 UNTR   United… Coal       8.16e13  0.000406 EEM   2.33e7          0.68 -3.60
+## # … with 2 more variables: PC2 &lt;dbl&gt;, cluster &lt;fct&gt;</code></pre>
+<p>Interestingly enough, we see two things. First, the presence of Tbk PT/Indonesia in the name, and remarkably high market cap. This could be due to an error in marketcap reporting from the tool used to gather this metric (possibly reported in different currency). Not a huge finding (in fact a flaw) but definitely a representation of how PCA/clustering can work to find irregularities and patterns in data without supervision. Had this been a huge dataset and a more real-life scenario, this would definitely inform the project surrounding it on data gathering and provide valuable feedback.</p>
+<div class="tocify-extend-page" data-unique="tocify-extend-page" style="height: 0;">
+
+</div>
+</div>
+</div>
+
+            
+        <hr>         <div class="related-posts">
+                <h5>Related Posts</h5>
+                
+              </div> 
+            </div>
+          </div>
+
+   <hr>  <div class="disqus">
+  <div id="disqus_thread"></div>
+  <script type="text/javascript">
+
+    (function() {
+      
+      
+      if (window.location.hostname == "localhost")
+        return;
+
+      var disqus_shortname = '';
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  <a href="http://disqus.com/" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div> 
+        </div>
+      </div>
+    </div>
+
+    
+    <footer>
+  <div id="footer">
+    <div class="container">
+      <p class="text-muted">&copy; All rights reserved. Powered by <a href="https://gohugo.io/">Hugo</a> and
+      <a href="http://www.github.com/nurlansu/hugo-sustain/">sustain</a> with ♥</p>
+    </div>
+  </div>
+</footer>
+<div class="footer"></div>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="/js/docs.min.js"></script>
+<script src="/js/main.js"></script>
+
+<script src="/js/ie10-viewport-bug-workaround.js"></script>
+
+
+    
+  </body>
+</html>

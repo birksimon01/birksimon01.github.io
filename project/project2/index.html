@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="Simon Birk" />
+    
+    <link rel="shortcut icon" type="image/x-icon" href="/img/favicon.ico">
+    <title>Project 2: Modeling</title>
+    <meta name="generator" content="Hugo 0.79.0" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="/css/main.css" />
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,400,200bold,400old" />
+    
+    <!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+    
+  </head>
+
+  <body>
+    <div id="wrap">
+      
+      <nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="/"><i class="fa fa-home"></i></a>
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <div class="navbar-collapse collapse" id="navbar">
+      <ul class="nav navbar-nav navbar-right">
+      
+        
+        <li><a href="/post/">BLOG</a></li>
+        
+        <li><a href="/projects/">PROJECTS</a></li>
+        
+        <li><a href="/resume/">RESUME</a></li>
+        
+      
+      </ul>
+    </div>
+  </div>
+</nav>
+
+      <div class="container">
+        <div class="blog-post">
+          <h3>
+            <strong><a href="/project/project2/">Project 2: Modeling</a></strong>
+          </h3>
+        </div>
+ 
+<div class="blog-title">
+          <h4>
+         January 1, 0001 
+            &nbsp;&nbsp;
+            
+          </h4>
+        </div>
+
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <div class="blogpost">
+              
+<link href="/rmarkdown-libs/anchor-sections/anchor-sections.css" rel="stylesheet" />
+<script src="/rmarkdown-libs/anchor-sections/anchor-sections.js"></script>
+
+
+<div id="simon-birk-slb4868" class="section level2">
+<h2>Simon Birk SLB4868</h2>
+<hr />
+<div id="identifyingintroducingcleaning-the-dataset-to-use-for-the-project" class="section level3">
+<h3>0) Identifying/Introducing/Cleaning the dataset to use for the project</h3>
+<pre class="r"><code>library(ape)
+library(tidyverse)
+library(ggplot2)
+data(carnivora)
+
+carnivora &lt;- carnivora %&gt;% mutate(y = case_when(SuperFamily == 
+    &quot;Feliformia&quot; ~ 1, TRUE ~ 0)) %&gt;% select(-Order, -SuperFamily, 
+    -Genus)
+
+# Taking the NAs out. BW, WA, AI, LY, all have sparse
+# information so it might not be a good idea to just remove
+# observations with NAs because we might not get many left.
+
+carnivora %&gt;% na.omit() %&gt;% head()</code></pre>
+<pre><code>##        Family          Species     FW    SW    FB    SB  LS   GL     BW  WA  AI
+## 5     Canidae    Lycaon pictus  22.20  22.0 128.0 129.0 8.8 70.5  365.0  77 390
+## 7     Canidae   Alopex lagopus   2.90   3.2  37.0  35.5 7.1 53.3   66.0  21 165
+## 8     Canidae    Vulpes vulpes   3.90   4.1  43.0  43.5 4.8 54.5  105.0  56 225
+## 19    Ursidae     Ursus arctos 298.50 298.5 339.0 338.3 2.0 63.0 1000.0 730 648
+## 20    Ursidae Ursus americanus  97.00 110.5 228.0 259.0 2.5 91.0  285.0 168 483
+## 42 Mustelidae        Gulo gulo  10.35  11.6  72.5  78.5 2.8 35.0   99.2  70 639
+##     LY    AM IB y
+## 5  132 t 132 13 0
+## 7  108   293 12 0
+## 8  144       12 0
+## 19 304  1338 30 0
+## 20 270  1834 27 0
+## 42 186   630 27 0</code></pre>
+<pre class="r"><code># only 14 observations if we leave these in. Which have the
+# most NAs?
+
+carnivora %&gt;% summarize(sum(is.na(BW)), sum(is.na(WA)), sum(is.na(AI)), 
+    sum(is.na(LY)), sum(IB == &quot;&quot;), sum(AM == &quot;&quot;))</code></pre>
+<pre><code>##   sum(is.na(BW)) sum(is.na(WA)) sum(is.na(AI)) sum(is.na(LY)) sum(IB == &quot;&quot;)
+## 1             50             49             82             63            55
+##   sum(AM == &quot;&quot;)
+## 1            57</code></pre>
+<pre class="r"><code># 82 NAs for AI, next is LY. Let&#39;s exclude these and redo.
+
+carnivora %&gt;% select(-AI, -LY) %&gt;% na.omit() %&gt;% head()</code></pre>
+<pre><code>##     Family        Species   FW   SW    FB    SB  LS   GL    BW WA    AM IB y
+## 1  Canidae    Canis lupus 31.1 33.1 130.0 132.3 5.5 63.0 425.0 35   913 12 0
+## 2  Canidae  Canis latrans  9.7 10.6  84.5  88.3 6.2 61.5 225.0 98   365 12 0
+## 5  Canidae  Lycaon pictus 22.2 22.0 128.0 129.0 8.8 70.5 365.0 77 t 132 13 0
+## 7  Canidae Alopex lagopus  2.9  3.2  37.0  35.5 7.1 53.3  66.0 21   293 12 0
+## 8  Canidae  Vulpes vulpes  3.9  4.1  43.0  43.5 4.8 54.5 105.0 56       12 0
+## 11 Canidae Fennecus zerda  1.5  1.5  17.5  17.3 2.8 54.3  34.8 66       12 0</code></pre>
+<pre class="r"><code># only 42 if we exclude just those two. We can get it to 91
+# rows if we exclude the rest of the big troublemakers. WA,
+# LY, BW and AI have lots of NAs. We&#39;ll exclude AM and IB as
+# well to get rid of their blanks too. 91x11 dataset is the
+# final cleaned dataset.
+
+carn &lt;- carnivora %&gt;% select(-WA, -AI, -LY, -AM, -IB, -BW) %&gt;% 
+    na.omit()</code></pre>
+<p>We’re going to make statistical models on the carnivora dataset from the ‘ape’ package. It contains taxonomic information from order all the way down to species, as well as avg adult female body weight (FW), avg adult body weight m+f (SW), avg female brain weight (FW), avg brain weight m+f (SW), litter size (LS), and gestation length (GL). We have created a binary response variable and gotten rid of the excess taxonomic variables except for species for now, as well as variables with abundant NAs or blank observations.</p>
+</div>
+<div id="manova-testing" class="section level3">
+<h3>1) MANOVA testing</h3>
+<div id="checking-assumptions" class="section level4">
+<h4>Checking assumptions</h4>
+<pre class="r"><code>library(rstatix)
+
+group &lt;- carn %&gt;% select(y) %&gt;% pull
+DVs &lt;- carn %&gt;% select(FW, SW, FB, SB, LS, GL)
+
+# Test multivariate normality for each group (null:
+# assumption met)
+sapply(split(DVs, group), mshapiro_test)</code></pre>
+<pre><code>##           0            1           
+## statistic 0.18445      0.6100198   
+## p.value   1.896875e-15 5.760743e-09</code></pre>
+<p>They definitely don’t make the assumptions, but that’s ok. We’ll just keep that in mind going forward. It’ll be clear how irregular the data is in the graphs depicting the first linear regression.</p>
+</div>
+<div id="manova-over-family" class="section level4">
+<h4>MANOVA over Family</h4>
+<pre class="r"><code># Conducting the MANOVA over the predictor variables vs.
+# family
+man1 &lt;- manova(cbind(FW, SW, FB, SB, LS, GL) ~ Family, data = carn)
+
+summary(man1)</code></pre>
+<pre><code>##           Df Pillai approx F num Df den Df    Pr(&gt;F)    
+## Family     6 1.7278   5.6618     36    504 &lt; 2.2e-16 ***
+## Residuals 84                                            
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+<pre class="r"><code>summary.aov(man1)</code></pre>
+<pre><code>##  Response FW :
+##             Df Sum Sq Mean Sq F value    Pr(&gt;F)    
+## Family       6  80378 13396.3  20.766 8.926e-15 ***
+## Residuals   84  54188   645.1                      
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+##  Response SW :
+##             Df Sum Sq Mean Sq F value    Pr(&gt;F)    
+## Family       6  88394 14732.4  19.532 3.884e-14 ***
+## Residuals   84  63360   754.3                      
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+##  Response FB :
+##             Df Sum Sq Mean Sq F value    Pr(&gt;F)    
+## Family       6 176067 29344.5  18.774 9.823e-14 ***
+## Residuals   84 131296  1563.1                      
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+##  Response SB :
+##             Df Sum Sq Mean Sq F value    Pr(&gt;F)    
+## Family       6 192372   32062   18.65 1.145e-13 ***
+## Residuals   84 144405    1719                      
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+##  Response LS :
+##             Df Sum Sq Mean Sq F value    Pr(&gt;F)    
+## Family       6  42.13  7.0217   4.766 0.0003165 ***
+## Residuals   84 123.76  1.4733                      
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+##  Response GL :
+##             Df Sum Sq Mean Sq F value    Pr(&gt;F)    
+## Family       6  12596 2099.38   4.472 0.0005631 ***
+## Residuals   84  39434  469.45                      
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
+</div>
+<div id="displaying-inter-family-difference" class="section level4">
+<h4>Displaying inter-family difference</h4>
+<p>There is substantial statistical significance in this MANOVA. Every s. Let’s see these group differences displayed through a graph. In this one, note that I’ve freed the y scale in each graph so its on a different scale for each. This is to make comparisons between groups possible which is all this graph is trying to illustrate</p>
+<pre class="r"><code>carn %&gt;% pivot_longer(c(-Family, -y, -Species), names_to = &quot;Characteristic&quot;, 
+    values_to = &quot;Value&quot;) %&gt;% ggplot(aes(x = Family, y = Value)) + 
+    geom_bar(stat = &quot;summary&quot;) + facet_wrap(&quot;Characteristic&quot;, 
+    scales = &quot;free_y&quot;) + geom_errorbar(stat = &quot;summary&quot;, fun.data = mean_cl_boot) + 
+    theme(axis.text.x = element_text(angle = 45, vjust = 1, size = 10, 
+        hjust = 1)) + labs(title = &quot;Average physical/life history characteristics of species under each carnivora family&quot;)</code></pre>
+<p><img src="/project/project2_files/figure-html/unnamed-chunk-4-1.png" width="768" style="display: block; margin: auto;" /></p>
+</div>
+<div id="pair-wise-post-hoc-t-tests" class="section level4">
+<h4>Pair-wise post-hoc t-tests</h4>
+<p>Doing the pair-wise t-tests to determined which variables differentiate which families.</p>
+<pre class="r"><code># Removing Hyaenidae as it there is only a single observation
+# under it, making it
+pairwise.t.test(carn$FW, carn$Family, p.adj = &quot;none&quot;)</code></pre>
+<pre><code>## 
+##  Pairwise comparisons using t tests with pooled SD 
+## 
+## data:  carn$FW and carn$Family 
+## 
+##             Canidae Felidae Hyaenidae Mustelidae Procyonidae Ursidae
+## Felidae     0.00709 -       -         -          -           -      
+## Hyaenidae   0.19695 0.84914 -         -          -           -      
+## Mustelidae  0.49353 0.00026 0.09486   -          -           -      
+## Procyonidae 0.68438 0.03884 0.17646   0.97522    -           -      
+## Ursidae     8.4e-16 2.4e-13 2.0e-10   &lt; 2e-16    1.3e-13     -      
+## Viverridae  0.46892 0.00066 0.09271   0.90483    0.97213     &lt; 2e-16
+## 
+## P value adjustment method: none</code></pre>
+<pre class="r"><code>pairwise.t.test(carn$SW, carn$Family, p.adj = &quot;none&quot;)</code></pre>
+<pre><code>## 
+##  Pairwise comparisons using t tests with pooled SD 
+## 
+## data:  carn$SW and carn$Family 
+## 
+##             Canidae Felidae Hyaenidae Mustelidae Procyonidae Ursidae
+## Felidae     0.00288 -       -         -          -           -      
+## Hyaenidae   0.26848 0.58623 -         -          -           -      
+## Mustelidae  0.53519 9.7e-05 0.14697   -          -           -      
+## Procyonidae 0.68198 0.02442 0.22871   0.94292    -           -      
+## Ursidae     6.4e-15 3.6e-12 5.9e-10   7.2e-16    7.7e-13     -      
+## Viverridae  0.47550 0.00024 0.13548   0.86229    0.97999     1.3e-15
+## 
+## P value adjustment method: none</code></pre>
+<pre class="r"><code>pairwise.t.test(carn$FB, carn$Family, p.adj = &quot;none&quot;)</code></pre>
+<pre><code>## 
+##  Pairwise comparisons using t tests with pooled SD 
+## 
+## data:  carn$FB and carn$Family 
+## 
+##             Canidae Felidae Hyaenidae Mustelidae Procyonidae Ursidae
+## Felidae     0.0470  -       -         -          -           -      
+## Hyaenidae   0.1502  0.7160  -         -          -           -      
+## Mustelidae  0.0100  3.7e-06 0.0059    -          -           -      
+## Procyonidae 0.1635  0.0097  0.0296    0.9649     -           -      
+## Ursidae     4.4e-11 2.5e-09 1.4e-06   1.3e-13    8.2e-11     -      
+## Viverridae  0.0021  1.0e-06 0.0021    0.3718     0.5975      5.2e-14
+## 
+## P value adjustment method: none</code></pre>
+<pre class="r"><code>pairwise.t.test(carn$SB, carn$Family, p.adj = &quot;none&quot;)</code></pre>
+<pre><code>## 
+##  Pairwise comparisons using t tests with pooled SD 
+## 
+## data:  carn$SB and carn$Family 
+## 
+##             Canidae Felidae Hyaenidae Mustelidae Procyonidae Ursidae
+## Felidae     0.0328  -       -         -          -           -      
+## Hyaenidae   0.2326  0.9757  -         -          -           -      
+## Mustelidae  0.0171  4.2e-06 0.0157    -          -           -      
+## Procyonidae 0.1789  0.0086  0.0519    0.9845     -           -      
+## Ursidae     2.8e-11 2.2e-09 4.9e-07   1.2e-13    6.3e-11     -      
+## Viverridae  0.0029  8.5e-07 0.0051    0.3258     0.6060      4.0e-14
+## 
+## P value adjustment method: none</code></pre>
+<pre class="r"><code>pairwise.t.test(carn$LS, carn$Family, p.adj = &quot;none&quot;)</code></pre>
+<pre><code>## 
+##  Pairwise comparisons using t tests with pooled SD 
+## 
+## data:  carn$LS and carn$Family 
+## 
+##             Canidae Felidae Hyaenidae Mustelidae Procyonidae Ursidae
+## Felidae     5.1e-05 -       -         -          -           -      
+## Hyaenidae   0.00924 0.72002 -         -          -           -      
+## Mustelidae  0.04670 0.00712 0.08645   -          -           -      
+## Procyonidae 0.04333 0.58335 0.49075   0.32922    -           -      
+## Ursidae     0.01704 0.61590 0.86898   0.10357    0.43476     -      
+## Viverridae  0.00016 0.75293 0.59858   0.01823    0.71961     0.52083
+## 
+## P value adjustment method: none</code></pre>
+<pre class="r"><code>pairwise.t.test(carn$GL, carn$Family, p.adj = &quot;none&quot;)</code></pre>
+<pre><code>## 
+##  Pairwise comparisons using t tests with pooled SD 
+## 
+## data:  carn$GL and carn$Family 
+## 
+##             Canidae Felidae Hyaenidae Mustelidae Procyonidae Ursidae
+## Felidae     0.00545 -       -         -          -           -      
+## Hyaenidae   0.00511 0.18372 -         -          -           -      
+## Mustelidae  0.36452 8.1e-05 0.00094   -          -           -      
+## Procyonidae 0.24183 0.57658 0.13732   0.08372    -           -      
+## Ursidae     0.29642 0.81029 0.26918   0.14932    0.88069     -      
+## Viverridae  0.36985 0.05098 0.01866   0.05521    0.52819     0.52090
+## 
+## P value adjustment method: none</code></pre>
+</div>
+<div id="alpha-correction-chance-of-false-positive" class="section level4">
+<h4>Alpha correction + Chance of false positive</h4>
+<p>Before we dive into what this means, we need to correct for the sheer number of tests we have just conducted, so first we need the number of tests we just did. Each pairwise t-test has 21 comparisons, so given 6 pairwise t-tests and a manova test (+ 6 univariate ANOVAs reported within it), we have 133 hypothesis tests.</p>
+<pre class="r"><code>num_tests &lt;- 133
+
+1 - 0.95^num_tests</code></pre>
+<pre><code>## [1] 0.9989105</code></pre>
+<p>With this amount of tests, there is a 99.9% chance of a false positive in there somewhere with the 0.05 cutoff. Let’s use the bonferroni correction to determine what we should lower our threshold to.</p>
+<pre class="r"><code>0.05/num_tests</code></pre>
+<pre><code>## [1] 0.0003759398</code></pre>
+<p>In determining the important comparisons from the pairwise tests above, we should look for values lower than 0.00038 for significance.</p>
+</div>
+<div id="significant-findings-from-the-pairwise-t-tests" class="section level4">
+<h4>Significant findings from the pairwise t-tests</h4>
+<p>With these pairwise tests, we can see what families each explanatory variable has significant difference of means between. FW sees significant difference between Ursidae and every other family as well as Felidae and Mustelidae. SW has the same significant differences as FW plus Felidae and Viverridae. Going down the list looking for p-values less than 0.00038 and its clear so far that Ursidae is a very distinct family from the first couple explanatory variables.</p>
+</div>
+</div>
+<div id="randomization-test" class="section level3">
+<h3>2) Randomization Test</h3>
+<div id="checking-the-mean-difference-between" class="section level4">
+<h4>Checking the mean difference between</h4>
+<p>Let’s use the randomization test to confirm something we saw in the pairwise tests that was semi-close to our cutoff of 0.00038. Sitting at a p-value of 0.00026 was the difference between Felidae and Mustelidae. We’ll see if it holds up to this randomization test.</p>
+<pre class="r"><code># Randomization test generated difference distribution
+diffs &lt;- vector()
+
+for (i in 1:10000) {
+    temp &lt;- carn %&gt;% mutate(FW = sample(carn$FW))
+    diffs[i] &lt;- temp %&gt;% summarize(mean(FW[Family == &quot;Felidae&quot;]) - 
+        mean(FW[Family == &quot;Mustelidae&quot;])) %&gt;% pull
+}
+
+real_diff &lt;- carn %&gt;% summarize(mean(FW[Family == &quot;Felidae&quot;]) - 
+    mean(FW[Family == &quot;Mustelidae&quot;])) %&gt;% pull
+
+mean(diffs &gt; real_diff)</code></pre>
+<pre><code>## [1] 0.007</code></pre>
+<p>Randomization has increased the p-value of this comparison to above the bonferroni-corrected 0.00038, although it is still an order of magnitude under 0.05.</p>
+</div>
+<div id="illustrating-the-null-distribution-vs-the-test-variable." class="section level4">
+<h4>Illustrating the null distribution vs the test variable.</h4>
+<pre class="r"><code>ggplot() + geom_histogram(aes(diffs)) + geom_vline(xintercept = real_diff) + 
+    labs(title = &quot;Null distribution of FW w/real group difference marked&quot;)</code></pre>
+<p><img src="/project/project2_files/figure-html/unnamed-chunk-9-1.png" width="768" style="display: block; margin: auto;" /></p>
+</div>
+</div>
+<div id="linear-regression" class="section level3">
+<h3>3) Linear Regression</h3>
+<div id="mean-centering-all-variables-for-availability-fb-was-retroactively-changed-to-log-transformed-then-mean-centered-because-of-a-trend-noticed-in-graphs-lower-down" class="section level4">
+<h4>Mean centering all variables for availability (FB was retroactively changed to log transformed then mean centered because of a trend noticed in graphs lower down)</h4>
+<pre class="r"><code>carn_mc &lt;- carn %&gt;% mutate(FW_c = FW - mean(FW), SW_c = SW - 
+    mean(SW), FB_log = log(FB), SB_c = SB - mean(SB), LS_c = LS - 
+    mean(LS), GL_c = GL - mean(GL), FB_c = FB - mean(FB)) %&gt;% 
+    mutate(FB_log_c = FB_log - mean(FB_log))</code></pre>
+</div>
+<div id="fitting-and-analyzing-the-lm." class="section level4">
+<h4>Fitting and analyzing the LM.</h4>
+<p>Let’s see if we can produce a good model for female body weight (FW) from every other predictor except for SW (which is avg bodyweight for the species overall).</p>
+<pre class="r"><code>lm_fit &lt;- lm(FW_c ~ LS_c * FB_log_c * SB_c * GL_c, data = carn_mc)
+
+summary(lm_fit)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = FW_c ~ LS_c * FB_log_c * SB_c * GL_c, data = carn_mc)
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -26.6030  -2.2973  -0.2404   1.6241  20.7772 
+## 
+## Coefficients:
+##                           Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)             -32.123650   5.898205  -5.446 6.25e-07 ***
+## LS_c                     16.618418   4.710558   3.528 0.000719 ***
+## FB_log_c                 43.432493   9.522491   4.561 1.95e-05 ***
+## SB_c                     -0.884581   0.264256  -3.347 0.001278 ** 
+## GL_c                     -0.164718   0.275002  -0.599 0.550998    
+## LS_c:FB_log_c           -28.299864   7.363904  -3.843 0.000253 ***
+## LS_c:SB_c                 0.739955   0.209557   3.531 0.000712 ***
+## FB_log_c:SB_c             0.510489   0.106359   4.800 7.91e-06 ***
+## LS_c:GL_c                -0.227864   0.285147  -0.799 0.426750    
+## FB_log_c:GL_c             0.480929   0.421766   1.140 0.257800    
+## SB_c:GL_c                -0.007341   0.011655  -0.630 0.530690    
+## LS_c:FB_log_c:SB_c       -0.320700   0.085609  -3.746 0.000350 ***
+## LS_c:FB_log_c:GL_c        0.317796   0.400950   0.793 0.430506    
+## LS_c:SB_c:GL_c           -0.007212   0.011312  -0.638 0.525721    
+## FB_log_c:SB_c:GL_c        0.004880   0.005034   0.970 0.335368    
+## LS_c:FB_log_c:SB_c:GL_c   0.006820   0.005280   1.292 0.200430    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 6.622 on 75 degrees of freedom
+## Multiple R-squared:  0.9756, Adjusted R-squared:  0.9707 
+## F-statistic: 199.6 on 15 and 75 DF,  p-value: &lt; 2.2e-16</code></pre>
+<p><em>Main Effects</em>
+Our intercept says that given all other variables are their means, the model will predict a female body weight of -7.099. For every increase in litter size (LS) from the mean, predicted weight goes up by 1.201. For every one unit increase in female brain weight (FB) from the mean, there is an increase in predicted outcome by 0.7184. For SB, an increase of one unit corresponds in this case to a decrease of ~0.45. An increase of one unit of GL will lead to an increase of 0.15.</p>
+<p><em>Interaction</em>
+Since there are too many interaction terms, I’ll interpret the first significant interaction term we see, FB_c:SB_c. For every one unit increase of FB_c, the slope of SB_c increases by 0.00123. The rest of the interaction interpretations follow this pattern. Interaction is all about how a change in one variable will affect the relationship of another explanatory variable with the response variable.</p>
+</div>
+<div id="visualizing" class="section level4">
+<h4>Visualizing</h4>
+<p>First, just a 2-D representation of the two significant explanatory variables in the model with color on top to see what it looks like</p>
+<pre class="r"><code>ggplot(carn_mc) + geom_point(aes(x = FB_c, y = GL_c, color = FW_c)) + 
+    scale_color_gradient(low = &quot;blue&quot;, high = &quot;red&quot;)</code></pre>
+<p><img src="/project/project2_files/figure-html/unnamed-chunk-12-1.png" width="768" style="display: block; margin: auto;" /></p>
+<p>Now, the two graphs w/geom_smooth for each of those above variables</p>
+<pre class="r"><code>ggplot(carn_mc, aes(x = FB_c, y = FW_c)) + geom_point() + geom_smooth(method = &quot;lm&quot;, 
+    se = F)</code></pre>
+<p><img src="/project/project2_files/figure-html/unnamed-chunk-13-1.png" width="768" style="display: block; margin: auto;" />
+Looking at this one, if I were to redo the linear model I’d maybe take the square root (or nlog) of FB_c first to make the relationship more linear. (going back over, it looks MUCH better with the log transformation, but leaving this here w/o the transformation for reference)</p>
+<pre class="r"><code>ggplot(carn_mc, aes(x = GL_c, y = FW_c)) + geom_point() + geom_smooth(method = &quot;lm&quot;, 
+    se = F)</code></pre>
+<p><img src="/project/project2_files/figure-html/unnamed-chunk-14-1.png" width="768" style="display: block; margin: auto;" />
+These are some wonky looking distributions but you can see the relationship pretty clearly in both of these variables. It could even be improved with the transformation suggested under the graph above. Very interesting to see gestational length and brain size correlate with the size of the average female.</p>
+<pre class="r"><code>library(interactions)
+
+interact_plot(model = lm_fit, pred = FB_log_c, modx = GL_c)</code></pre>
+<p><img src="/project/project2_files/figure-html/unnamed-chunk-15-1.png" width="768" style="display: block; margin: auto;" />
+Finally, the interaction plot for FB and GL. I’m leaving the other graphs that I played with here because they were useful for assessing the linearity and normality of our best predictor variables.</p>
+</div>
+<div id="checking-assumptions-1" class="section level4">
+<h4>Checking assumptions</h4>
+<pre class="r"><code>library(lmtest)
+bptest(lm_fit)</code></pre>
+<pre><code>## 
+##  studentized Breusch-Pagan test
+## 
+## data:  lm_fit
+## BP = 45.585, df = 15, p-value = 6.188e-05</code></pre>
+<p>With a p-value of &lt;0.05 produced, we have to reject the homoskedasticity assumption. Linearity and normality of my leading explanatory variables was assessed in the graphs of the previous section. And the model was corrected as much as it could be (FB changed from just mean centered to log transformed then mean centered to improve linearity).</p>
+</div>
+<div id="robust-ses" class="section level4">
+<h4>Robust SEs</h4>
+<pre class="r"><code>library(sandwich)
+coeftest(lm_fit, vcov = vcovHC(lm_fit))</code></pre>
+<pre><code>## 
+## t test of coefficients:
+## 
+##                            Estimate  Std. Error t value Pr(&gt;|t|)
+## (Intercept)             -32.1236496  30.2726929 -1.0611   0.2920
+## LS_c                     16.6184176  20.1175290  0.8261   0.4114
+## FB_log_c                 43.4324927  49.7150125  0.8736   0.3851
+## SB_c                     -0.8845815   1.2949075 -0.6831   0.4966
+## GL_c                     -0.1647183   0.6803262 -0.2421   0.8094
+## LS_c:FB_log_c           -28.2998645  32.0139095 -0.8840   0.3795
+## LS_c:SB_c                 0.7399550   0.8760056  0.8447   0.4010
+## FB_log_c:SB_c             0.5104889   0.5879157  0.8683   0.3880
+## LS_c:GL_c                -0.2278639   0.8082928 -0.2819   0.7788
+## FB_log_c:GL_c             0.4809292   1.0361084  0.4642   0.6439
+## SB_c:GL_c                -0.0073413   0.0278457 -0.2636   0.7928
+## LS_c:FB_log_c:SB_c       -0.3207002   0.3773468 -0.8499   0.3981
+## LS_c:FB_log_c:GL_c        0.3177961   1.0045160  0.3164   0.7526
+## LS_c:SB_c:GL_c           -0.0072115   0.0304736 -0.2366   0.8136
+## FB_log_c:SB_c:GL_c        0.0048804   0.0134868  0.3619   0.7185
+## LS_c:FB_log_c:SB_c:GL_c   0.0068201   0.0140473  0.4855   0.6287</code></pre>
+<p>These effects do not hold up well to robust SEs. All significance has disappeared.</p>
+</div>
+<div id="r-squared-discussion." class="section level4">
+<h4>R squared discussion.</h4>
+<p>With an adjusted R squared of 0.97, this model should explain 97% of the variance in FW. This reeks of overfitting given how much interaction is present and how little statistically strong relationships we have.</p>
+</div>
+</div>
+<div id="resampling-residuals" class="section level3">
+<h3>4) Resampling Residuals</h3>
+<pre class="r"><code>resids &lt;- lm_fit$residuals
+fitted &lt;- lm_fit$fitted.values
+resid_resamp &lt;- replicate(5000, {
+    new_resids &lt;- sample(resids, replace = TRUE)
+    carn_mc$FW_c &lt;- fitted + new_resids
+    fit &lt;- lm(FW_c ~ LS_c * FB_log_c * SB_c * GL_c, data = carn_mc)
+    coef(fit)
+})
+
+resid_resamp %&gt;% t %&gt;% as.data.frame %&gt;% summarize_all(sd)</code></pre>
+<pre><code>##   (Intercept)     LS_c FB_log_c      SB_c    GL_c LS_c:FB_log_c LS_c:SB_c
+## 1    5.313396 4.194955 8.593997 0.2379143 0.24584      6.585598 0.1873885
+##   FB_log_c:SB_c LS_c:GL_c FB_log_c:GL_c  SB_c:GL_c LS_c:FB_log_c:SB_c
+## 1    0.09597479 0.2548417     0.3768817 0.01037092         0.07645679
+##   LS_c:FB_log_c:GL_c LS_c:SB_c:GL_c FB_log_c:SB_c:GL_c LS_c:FB_log_c:SB_c:GL_c
+## 1          0.3570516     0.01005426        0.004494241             0.004715543</code></pre>
+<p>We see a slight decrease overall in the standard error, which is strange, but otherwise these results line up well with the non-robust SEs. MUCH lower than the robust SEs.</p>
+</div>
+<div id="logistic-regression-1" class="section level3">
+<h3>5) Logistic Regression 1</h3>
+<div id="fitting-glm-predicting-binary-variable-from-fb-and-gl-in-this-case-superfamily-y1-superfamilyfeliformia" class="section level5">
+<h5>Fitting GLM predicting binary variable from FB and GL (in this case, SuperFamily (y=1 ~ SuperFamily=Feliformia))</h5>
+<pre class="r"><code>glm_1_fit &lt;- glm(y ~ FB_log_c * GL_c, data = carn_mc, family = &quot;binomial&quot;)
+
+summary(glm_1_fit)</code></pre>
+<pre><code>## 
+## Call:
+## glm(formula = y ~ FB_log_c * GL_c, family = &quot;binomial&quot;, data = carn_mc)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -2.7056  -0.9277  -0.5088   1.0831   1.6837  
+## 
+## Coefficients:
+##                Estimate Std. Error z value Pr(&gt;|z|)   
+## (Intercept)   -0.146521   0.259646  -0.564  0.57254   
+## FB_log_c      -0.298052   0.256651  -1.161  0.24551   
+## GL_c           0.048608   0.015098   3.219  0.00128 **
+## FB_log_c:GL_c -0.011839   0.009716  -1.218  0.22304   
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 124.29  on 90  degrees of freedom
+## Residual deviance: 109.00  on 87  degrees of freedom
+## AIC: 117
+## 
+## Number of Fisher Scoring iterations: 4</code></pre>
+<pre class="r"><code># finding odds for FB_log_c
+exp(-0.298)</code></pre>
+<pre><code>## [1] 0.7423013</code></pre>
+<pre class="r"><code># GL_c
+exp(0.0486)</code></pre>
+<pre><code>## [1] 1.0498</code></pre>
+<pre class="r"><code># interaction term
+exp(-0.011839)</code></pre>
+<pre><code>## [1] 0.9882308</code></pre>
+<p>a one gram(unit) increase in FB_log_c multiplies odds by 0.742, a one day(unit) increase in gestation length multiplies odds by 1.0498, and for every one day increase in gestation length, the log-odds slope of FB_log_c decreases by 0.01 (leading to even greater decrease in odds multiplier when converted).
+#### Confusion matrix</p>
+<pre class="r"><code>probs &lt;- predict(glm_1_fit, type = &quot;response&quot;)
+
+table(predict = as.numeric(probs &gt; 0.5), truth = carn_mc$y) %&gt;% 
+    addmargins</code></pre>
+<pre><code>##        truth
+## predict  0  1 Sum
+##     0   43 20  63
+##     1    9 19  28
+##     Sum 52 39  91</code></pre>
+</div>
+<div id="density-plot-of-log-odds-coloredgrouped-by-binary-outcome" class="section level4">
+<h4>Density plot of log-odds colored/grouped by binary outcome</h4>
+<pre class="r"><code>carn_mc$logit &lt;- predict(glm_1_fit)
+
+carn_mc_sf &lt;- carn_mc %&gt;% mutate(SuperFamily = case_when(y == 
+    1 ~ &quot;Feliformia&quot;, y == 0 ~ &quot;Caniformia&quot;))
+
+carn_mc_sf %&gt;% ggplot(aes(logit, fill = SuperFamily)) + geom_density(alpha = 0.3) + 
+    geom_vline(xintercept = 0, lty = 2)</code></pre>
+<p><img src="/project/project2_files/figure-html/unnamed-chunk-21-1.png" width="768" style="display: block; margin: auto;" /></p>
+</div>
+<div id="classification-diagnostics-acc-tpr-tnr-ppv-and-auc" class="section level4">
+<h4>Classification diagnostics (ACC, TPR, TNR, PPV, and AUC)</h4>
+<pre class="r"><code># Using the class_diag method from class
+
+class_diag &lt;- function(probs, truth) {
+    
+    tab &lt;- table(factor(probs &gt; 0.5, levels = c(&quot;FALSE&quot;, &quot;TRUE&quot;)), 
+        truth)
+    acc = sum(diag(tab))/sum(tab)
+    sens = tab[2, 2]/colSums(tab)[2]
+    spec = tab[1, 1]/colSums(tab)[1]
+    ppv = tab[2, 2]/rowSums(tab)[2]
+    
+    if (is.numeric(truth) == FALSE &amp; is.logical(truth) == FALSE) 
+        truth &lt;- as.numeric(truth) - 1
+    
+    # CALCULATE EXACT AUC
+    ord &lt;- order(probs, decreasing = TRUE)
+    probs &lt;- probs[ord]
+    truth &lt;- truth[ord]
+    
+    TPR = cumsum(truth)/max(1, sum(truth))
+    FPR = cumsum(!truth)/max(1, sum(!truth))
+    
+    dup &lt;- c(probs[-1] &gt;= probs[-length(probs)], FALSE)
+    TPR &lt;- c(0, TPR[!dup], 1)
+    FPR &lt;- c(0, FPR[!dup], 1)
+    
+    n &lt;- length(TPR)
+    auc &lt;- sum(((TPR[-1] + TPR[-n])/2) * (FPR[-1] - FPR[-n]))
+    
+    data.frame(acc, sens, spec, ppv, auc)
+}
+
+class_diag(probs, carn_mc$y)</code></pre>
+<pre><code>##         acc      sens      spec       ppv      auc
+## 1 0.6813187 0.4871795 0.8269231 0.6785714 0.806213</code></pre>
+<p>Our model has an accuracy of 0.68, meaning that it chooses the right answer 68% of the time. It has a true positive rate (sensitivity) of 0.487, making it not very sensitive, a true negative rate of 0.827, a respectable specificity, a precision of 0.679, and an area under the curve of 0.81. Not great, but still pretty good given just two predictors.</p>
+</div>
+<div id="roc-curve-auc-calculation" class="section level4">
+<h4>ROC curve + AUC calculation</h4>
+<pre class="r"><code>library(plotROC)
+carn_mc$prob &lt;- probs
+
+ROCplot &lt;- ggplot(data = carn_mc) + geom_roc(aes(d = y, m = prob)) + 
+    labs(title = &quot;ROC curve&quot;)
+ROCplot</code></pre>
+<p><img src="/project/project2_files/figure-html/unnamed-chunk-23-1.png" width="768" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>calc_auc(ROCplot)</code></pre>
+<pre><code>##   PANEL group      AUC
+## 1     1    -1 0.806213</code></pre>
+</div>
+</div>
+<div id="logistic-regression-2" class="section level3">
+<h3>6) Logistic Regression 2</h3>
+<div id="fitting-the-glm-w-more-variables-y-superfamily-from-all-other-available-variables." class="section level4">
+<h4>Fitting the glm w/ more variables (y (SuperFamily) from all other available variables.)</h4>
+<pre class="r"><code>glm_2_fit &lt;- glm(y ~ FB_log_c + GL_c + FW_c + SW_c + SB_c, data = carn_mc, 
+    family = &quot;binomial&quot;)
+
+summary(glm_2_fit)</code></pre>
+<pre><code>## 
+## Call:
+## glm(formula = y ~ FB_log_c + GL_c + FW_c + SW_c + SB_c, family = &quot;binomial&quot;, 
+##     data = carn_mc)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -2.4773  -0.8981  -0.4109   0.9957   1.9141  
+## 
+## Coefficients:
+##             Estimate Std. Error z value Pr(&gt;|z|)   
+## (Intercept) -0.37793    0.26560  -1.423  0.15476   
+## FB_log_c     1.24974    0.61045   2.047  0.04064 * 
+## GL_c         0.04512    0.01536   2.938  0.00330 **
+## FW_c        -0.21083    0.11462  -1.839  0.06585 . 
+## SW_c         0.27502    0.12542   2.193  0.02832 * 
+## SB_c        -0.07314    0.02569  -2.848  0.00441 **
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 124.289  on 90  degrees of freedom
+## Residual deviance:  97.509  on 85  degrees of freedom
+## AIC: 109.51
+## 
+## Number of Fisher Scoring iterations: 5</code></pre>
+<pre class="r"><code>carn_mc$new_probs &lt;- predict(glm_2_fit)
+
+class_diag(probs = carn_mc$new_probs, truth = carn_mc$y)</code></pre>
+<pre><code>##         acc      sens      spec ppv       auc
+## 1 0.7032967 0.4102564 0.9230769 0.8 0.8150888</code></pre>
+<pre class="r"><code># determining odds multipliers
+exp(1.24974)</code></pre>
+<pre><code>## [1] 3.489436</code></pre>
+<pre class="r"><code>exp(0.04512)</code></pre>
+<pre><code>## [1] 1.046153</code></pre>
+<p>In this model, there is significance in FB_log_c, GL_c, SW_c, and SB_c. I’ll interpret the first two important variables. For FB_log_c, every one unit increase will multiply odds by 3.49 in this model. For GL_c, a one day increase will multiply odds by 1.046.</p>
+<p>Adding these extra variables has added some, but not much, to the AUC/spec of our model. AUC has risen ~0.01 to .815, specificity has risen to 92.3, but sensitivity has dropped to 0.41.</p>
+</div>
+<div id="cross-validation" class="section level4">
+<h4>Cross-validation</h4>
+<pre class="r"><code>k = 10
+
+data1 &lt;- carn_mc[sample(nrow(carn_mc)), ]
+folds &lt;- cut(seq(1:nrow(carn_mc)), breaks = k, labels = F)
+
+diags &lt;- NULL
+for (i in 1:k) {
+    train &lt;- data1[folds != i, ]
+    test &lt;- data1[folds == i, ]
+    
+    truth &lt;- test$y
+    
+    fit &lt;- glm(y ~ FB_log_c + GL_c + FW_c + SW_c + SB_c, data = carn_mc, 
+        family = &quot;binomial&quot;)
+    probs &lt;- predict(fit, newdata = test, type = &quot;response&quot;)
+    
+    diags &lt;- rbind(diags, class_diag(probs, truth))
+}
+
+summarize_all(diags, mean)</code></pre>
+<pre><code>##         acc sens      spec       ppv       auc
+## 1 0.7488889 0.67 0.8330952 0.7583333 0.8623175</code></pre>
+<p>Sensitivity increased, but specificity dropped vs in-sample metrics. AUC is fairly constant, indicative of us not having too much overfitting in the model. Overall very similar to before.</p>
+</div>
+<div id="lasso-regularization" class="section level4">
+<h4>LASSO regularization</h4>
+<pre class="r"><code>library(glmnet)
+
+preds &lt;- model.matrix(glm_2_fit)[, -1]
+
+preds[, 1] = exp(preds[, 1])
+cv &lt;- cv.glmnet(x = preds, y = as.matrix(carn_mc$y), family = &quot;binomial&quot;)
+
+lasso_fit &lt;- glmnet(x = preds, y = as.matrix(carn_mc$y), family = &quot;binomial&quot;, 
+    alpha = 1, lambda = cv$lambda.1se)
+coef(lasso_fit)</code></pre>
+<pre><code>## 6 x 1 sparse Matrix of class &quot;dgCMatrix&quot;
+##                       s0
+## (Intercept) -0.289455736
+## FB_log_c     .          
+## GL_c         0.007387648
+## FW_c         .          
+## SW_c         .          
+## SB_c         .</code></pre>
+<pre class="r"><code>lasso_probs &lt;- predict(lasso_fit, preds, type = &quot;response&quot;)
+
+table(truth = carn_mc$y, prediction = lasso_probs &gt; 0.5) %&gt;% 
+    addmargins</code></pre>
+<pre><code>##      prediction
+## truth FALSE TRUE Sum
+##   0      48    4  52
+##   1      37    2  39
+##   Sum    85    6  91</code></pre>
+<p>It seems to think that the only useful variable is GL_c. This model really sucks. It looks like it just chooses false for basically everything.</p>
+</div>
+<div id="cv-on-lasso-variables" class="section level4">
+<h4>CV on LASSO variables</h4>
+<pre class="r"><code>k = 10
+
+data1 &lt;- carn_mc[sample(nrow(carn_mc)), ]
+folds &lt;- cut(seq(1:nrow(carn_mc)), breaks = k, labels = F)
+
+diags &lt;- NULL
+for (i in 1:k) {
+    train &lt;- data1[folds != i, ]
+    test &lt;- data1[folds == i, ]
+    
+    truth &lt;- test$y
+    
+    fit &lt;- glm(y ~ GL_c, data = carn_mc, family = &quot;binomial&quot;)
+    probs &lt;- predict(fit, newdata = test, type = &quot;response&quot;)
+    
+    diags &lt;- rbind(diags, class_diag(probs, truth))
+}
+
+summarize_all(diags, mean)</code></pre>
+<pre><code>##    acc      sens      spec ppv       auc
+## 1 0.68 0.4114286 0.8890476 NaN 0.8088492</code></pre>
+<p>Despite what we saw in the confusion matrix above, this looks better, actually. AUC is OK (slightly lower), specificity (TNR) is good at mid 0.8s, although mid 0.4s sensitivity (TPR) is pretty bad. I think the fault really comes down to there not being enough data points, as I had to exclude so many variables due to missings that it probably hindered the modeling power of the dataset.</p>
+<pre><code>## R version 3.6.2 (2019-12-12)
+## Platform: x86_64-apple-darwin15.6.0 (64-bit)
+## Running under: macOS Mojave 10.14.6
+## 
+## Matrix products: default
+## BLAS:   /Library/Frameworks/R.framework/Versions/3.6/Resources/lib/libRblas.0.dylib
+## LAPACK: /Library/Frameworks/R.framework/Versions/3.6/Resources/lib/libRlapack.dylib
+## 
+## locale:
+## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+## 
+## attached base packages:
+## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## 
+## other attached packages:
+##  [1] glmnet_4.0-2       Matrix_1.2-18      plotROC_2.2.1      sandwich_3.0-0    
+##  [5] lmtest_0.9-38      zoo_1.8-8          interactions_1.1.3 rstatix_0.6.0     
+##  [9] forcats_0.5.0      stringr_1.4.0      dplyr_1.0.2        purrr_0.3.3       
+## [13] readr_1.3.1        tidyr_1.1.2        tibble_3.0.4       ggplot2_3.3.2     
+## [17] tidyverse_1.3.0    ape_5.4-1          knitr_1.30        
+## 
+## loaded via a namespace (and not attached):
+##  [1] nlme_3.1-142      fs_1.5.0          lubridate_1.7.9.2 httr_1.4.2       
+##  [5] tools_3.6.2       backports_1.1.9   R6_2.4.1          DBI_1.1.0        
+##  [9] mgcv_1.8-31       colorspace_1.4-1  withr_2.2.0       tidyselect_1.1.0 
+## [13] curl_4.3          compiler_3.6.2    cli_2.0.1         rvest_0.3.6      
+## [17] formatR_1.7       xml2_1.3.2        labeling_0.3      bookdown_0.21    
+## [21] scales_1.1.1      digest_0.6.23     foreign_0.8-72    rmarkdown_2.5    
+## [25] rio_0.5.16        pkgconfig_2.0.3   htmltools_0.5.0   dbplyr_2.0.0     
+## [29] rlang_0.4.9       readxl_1.3.1      rstudioapi_0.11   shape_1.4.5      
+## [33] farver_2.0.3      generics_0.1.0    jsonlite_1.6.1    zip_2.0.4        
+## [37] car_3.0-6         magrittr_1.5      Rcpp_1.0.3        munsell_0.5.0    
+## [41] fansi_0.4.1       abind_1.4-5       lifecycle_0.2.0   stringi_1.4.6    
+## [45] yaml_2.2.1        carData_3.0-3     plyr_1.8.6        grid_3.6.2       
+## [49] parallel_3.6.2    crayon_1.3.4      lattice_0.20-38   haven_2.2.0      
+## [53] splines_3.6.2     jtools_2.1.1      pander_0.6.3      hms_0.5.3        
+## [57] pillar_1.4.3      codetools_0.2-16  reprex_0.3.0      glue_1.4.2       
+## [61] evaluate_0.14     blogdown_0.20     data.table_1.12.8 modelr_0.1.8     
+## [65] vctrs_0.3.5       foreach_1.5.1     cellranger_1.1.0  gtable_0.3.0     
+## [69] assertthat_0.2.1  xfun_0.19         openxlsx_4.1.4    broom_0.7.2      
+## [73] survival_3.1-8    iterators_1.0.13  ellipsis_0.3.0</code></pre>
+<pre><code>## [1] &quot;2020-12-09 20:34:02 CST&quot;</code></pre>
+<pre><code>##                                                                                             sysname 
+##                                                                                            &quot;Darwin&quot; 
+##                                                                                             release 
+##                                                                                            &quot;18.7.0&quot; 
+##                                                                                             version 
+## &quot;Darwin Kernel Version 18.7.0: Mon Feb 10 21:08:45 PST 2020; root:xnu-4903.278.28~1/RELEASE_X86_64&quot; 
+##                                                                                            nodename 
+##                                                                          &quot;Simons-MacBook-Pro.local&quot; 
+##                                                                                             machine 
+##                                                                                            &quot;x86_64&quot; 
+##                                                                                               login 
+##                                                                                         &quot;simonbirk&quot; 
+##                                                                                                user 
+##                                                                                         &quot;simonbirk&quot; 
+##                                                                                      effective_user 
+##                                                                                         &quot;simonbirk&quot;</code></pre>
+</div>
+</div>
+</div>
+
+            
+        <hr>         <div class="related-posts">
+                <h5>Related Posts</h5>
+                
+              </div> 
+            </div>
+          </div>
+
+   <hr>  <div class="disqus">
+  <div id="disqus_thread"></div>
+  <script type="text/javascript">
+
+    (function() {
+      
+      
+      if (window.location.hostname == "localhost")
+        return;
+
+      var disqus_shortname = '';
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  <a href="http://disqus.com/" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div> 
+        </div>
+      </div>
+    </div>
+
+    
+    <footer>
+  <div id="footer">
+    <div class="container">
+      <p class="text-muted">&copy; All rights reserved. Powered by <a href="https://gohugo.io/">Hugo</a> and
+      <a href="http://www.github.com/nurlansu/hugo-sustain/">sustain</a> with ♥</p>
+    </div>
+  </div>
+</footer>
+<div class="footer"></div>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="/js/docs.min.js"></script>
+<script src="/js/main.js"></script>
+
+<script src="/js/ie10-viewport-bug-workaround.js"></script>
+
+
+    
+  </body>
+</html>

@@ -1,0 +1,420 @@
+---
+title: "Project 2: Modeling"
+author: "SDS348"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+  pdf_document: default
+---
+
+```{r global_options, include=FALSE}
+#LEAVE THIS CHUNK ALONE!
+library(knitr)
+opts_chunk$set(fig.align="center", fig.height=5, message=FALSE, warning=FALSE, fig.width=8, tidy.opts=list(width.cutoff=60),tidy=TRUE)
+```
+
+## Simon Birk SLB4868
+
+---
+
+### 0) Identifying/Introducing/Cleaning the dataset to use for the project
+
+```{R}
+library(ape)
+library(tidyverse)
+library(ggplot2)
+data(carnivora)
+
+carnivora %>% mutate(y = case_when(
+  SuperFamily == "Feliformia" ~ 1,
+  TRUE ~ 0
+)) %>% select(-Order, -SuperFamily, -Genus) -> carnivora
+
+#Taking the NAs out. BW, WA, AI, LY, all have sparse information so it might not be a good idea to just remove observations with NAs because we might not get many left.
+
+carnivora %>% na.omit() %>% head()
+
+# only 14 observations if we leave these in. Which have the most NAs?
+
+carnivora %>% summarize(sum(is.na(BW)), sum(is.na(WA)), sum(is.na(AI)), sum(is.na(LY)), sum(IB==""), sum(AM==""))
+
+# 82 NAs for AI, next is LY. Let's exclude these and redo.
+
+carnivora %>% select(-AI, -LY) %>% na.omit() %>% head()
+
+# only 42 if we exclude just those two. We can get it to 91 rows if we exclude the rest of the big troublemakers. WA, LY, BW and AI have lots of NAs. We'll exclude AM and IB as well to get rid of their blanks too. 91x11 dataset is the final cleaned dataset.
+
+carn <- carnivora%>% select(-WA, -AI, -LY, -AM, -IB, -BW) %>% na.omit()
+```
+We're going to make statistical models on the carnivora dataset from the 'ape' package. It contains taxonomic information from order all the way down to species, as well as avg adult female body weight (FW), avg adult body weight m+f (SW), avg female brain weight (FW), avg brain weight m+f (SW), litter size (LS), and gestation length (GL). We have created a binary response variable and gotten rid of the excess taxonomic variables except for species for now, as well as variables with abundant NAs or blank observations.
+
+### 1) MANOVA testing
+
+#### Checking assumptions
+```{R}
+library(rstatix)
+
+group <- carn %>% select(y) %>% pull
+DVs <- carn %>% select(FW, SW, FB, SB, LS, GL)
+
+#Test multivariate normality for each group (null: assumption met)
+sapply(split(DVs,group), mshapiro_test)
+```
+They definitely don't make the assumptions, but that's ok. We'll just keep that in mind going forward. It'll be clear how irregular the data is in the graphs depicting the first linear regression.
+
+#### MANOVA over Family
+
+```{R}
+#Conducting the MANOVA over the predictor variables vs. family
+man1<-manova(cbind(FW, SW, FB, SB, LS, GL)~Family, data=carn)
+
+summary(man1)
+
+summary.aov(man1)
+```
+
+#### Displaying inter-family difference 
+
+There is substantial statistical significance in this MANOVA. Every s. Let's see these group differences displayed through a graph. In this one, note that I've freed the y scale in each graph so its on a different scale for each. This is to make comparisons between groups possible which is all this graph is trying to illustrate
+```{R}
+carn %>% pivot_longer(c(-Family, -y, -Species), names_to = "Characteristic", 
+    values_to = "Value") %>% ggplot(aes(x = Family, 
+    y = Value)) + geom_bar(stat = "summary") + 
+    facet_wrap("Characteristic", scales = "free_y") + geom_errorbar(stat = "summary", 
+    fun.data = mean_cl_boot) + theme(axis.text.x = element_text(angle = 45, 
+    vjust = 1, size = 10, hjust = 1)) + labs(title = "Average physical/life history characteristics of species under each carnivora family")
+```
+
+#### Pair-wise post-hoc t-tests
+
+Doing the pair-wise t-tests to determined which variables differentiate which families.
+```{R}
+# Removing Hyaenidae as it there is only a single observation under it, making it
+pairwise.t.test(carn$FW, carn$Family,p.adj="none")
+pairwise.t.test(carn$SW, carn$Family,p.adj="none")
+pairwise.t.test(carn$FB, carn$Family,p.adj="none")
+pairwise.t.test(carn$SB, carn$Family,p.adj="none")
+pairwise.t.test(carn$LS, carn$Family,p.adj="none")
+pairwise.t.test(carn$GL, carn$Family,p.adj="none")
+```
+
+#### Alpha correction + Chance of false positive
+Before we dive into what this means, we need to correct for the sheer number of tests we have just conducted, so first we need the number of tests we just did. Each pairwise t-test has 21 comparisons, so given 6 pairwise t-tests and a manova test (+ 6 univariate ANOVAs reported within it), we have 133 hypothesis tests.
+```{R}
+num_tests <- 133
+
+1 - 0.95^num_tests
+```
+With this amount of tests, there is a 99.9% chance of a false positive in there somewhere with the 0.05 cutoff. Let's use the bonferroni correction to determine what we should lower our threshold to.
+```{R}
+0.05/num_tests
+```
+In determining the important comparisons from the pairwise tests above, we should look for values lower than 0.00038 for significance.
+
+#### Significant findings from the pairwise t-tests
+
+With these pairwise tests, we can see what families each explanatory variable has significant difference of means between. FW sees significant difference between Ursidae and every other family as well as Felidae and Mustelidae. SW has the same significant differences as FW plus Felidae and Viverridae. Going down the list looking for p-values less than 0.00038 and its clear so far that Ursidae is a very distinct family from the first couple explanatory variables.
+
+### 2) Randomization Test
+
+#### Checking the mean difference between 
+Let's use the randomization test to confirm something we saw in the pairwise tests that was semi-close to our cutoff of 0.00038. Sitting at a p-value of 0.00026 was the difference between Felidae and Mustelidae. We'll see if it holds up to this randomization test.
+
+```{R}
+#Randomization test generated difference distribution
+diffs<-vector()
+
+for(i in 1:10000){
+temp <- carn %>% mutate(FW = sample(carn$FW))
+diffs[i] <- temp %>% summarize(mean(FW[Family=="Felidae"]) - mean(FW[Family=="Mustelidae"]))%>%pull
+}
+
+carn %>% summarize(mean(FW[Family=="Felidae"]) - mean(FW[Family=="Mustelidae"])) %>% pull -> real_diff
+
+mean(diffs>real_diff)
+```
+Randomization has increased the p-value of this comparison to above the bonferroni-corrected 0.00038, although it is still an order of magnitude under 0.05.
+
+#### Illustrating the null distribution vs the test variable.
+
+```{R}
+ggplot() +geom_histogram(aes(diffs)) +geom_vline(xintercept=real_diff) + labs(title="Null distribution of FW w/real group difference marked")
+```
+
+### 3) Linear Regression
+
+#### Mean centering all variables for availability (FB was retroactively changed to log transformed then mean centered because of a trend noticed in graphs lower down)
+```{R}
+carn_mc <- carn %>% mutate(FW_c = FW-mean(FW), SW_c = SW-mean(SW), FB_log = log(FB), SB_c = SB-mean(SB), LS_c = LS-mean(LS), GL_c = GL-mean(GL), FB_c=FB-mean(FB)) %>% mutate(FB_log_c = FB_log-mean(FB_log))
+```
+
+#### Fitting and analyzing the LM.
+
+Let's see if we can produce a good model for female body weight (FW) from every other predictor except for SW (which is avg bodyweight for the species overall).
+```{R}
+lm_fit <- lm(FW_c~LS_c*FB_log_c*SB_c*GL_c, data=carn_mc)
+
+summary(lm_fit)
+```
+*Main Effects*
+Our intercept says that given all other variables are their means, the model will predict a female body weight of -7.099. For every increase in litter size (LS) from the mean, predicted weight goes up by 1.201. For every one unit increase in female brain weight (FB) from the mean, there is an increase in predicted outcome by 0.7184. For SB, an increase of one unit corresponds in this case to a decrease of ~0.45. An increase of one unit of GL will lead to an increase of 0.15.
+
+*Interaction*
+Since there are too many interaction terms, I'll interpret the first significant interaction term we see, FB_c:SB_c. For every one unit increase of FB_c, the slope of SB_c increases by 0.00123. The rest of the interaction interpretations follow this pattern. Interaction is all about how a change in one variable will affect the relationship of another explanatory variable with the response variable.
+
+#### Visualizing
+
+First, just a 2-D representation of the two significant explanatory variables in the model with color on top to see what it looks like
+
+```{R}
+ggplot(carn_mc) + geom_point(aes(x=FB_c, y=GL_c, color=FW_c)) + scale_color_gradient(low="blue", high="red")
+```
+
+Now, the two graphs w/geom_smooth for each of those above variables
+```{R}
+ggplot(carn_mc, aes(x=FB_c, y=FW_c)) + geom_point() + geom_smooth(method = 'lm',se=F)
+```
+Looking at this one, if I were to redo the linear model I'd maybe take the square root (or nlog) of FB_c first to make the relationship more linear. (going back over, it looks MUCH better with the log transformation, but leaving this here w/o the transformation for reference)
+```{R}
+ggplot(carn_mc, aes(x=GL_c, y=FW_c)) + geom_point() + geom_smooth(method = 'lm',se=F)
+```
+These are some wonky looking distributions but you can see the relationship pretty clearly in both of these variables. It could even be improved with the transformation suggested under the graph above. Very interesting to see gestational length and brain size correlate with the size of the average female.
+
+```{R}
+library(interactions)
+
+interact_plot(model=lm_fit, pred=FB_log_c, modx=GL_c)
+```
+Finally, the interaction plot for FB and GL. I'm leaving the other graphs that I played with here because they were useful for assessing the linearity and normality of our best predictor variables.
+
+#### Checking assumptions
+
+```{R}
+library(lmtest)
+bptest(lm_fit)
+```
+With a p-value of <0.05 produced, we have to reject the homoskedasticity assumption. Linearity and normality of my leading explanatory variables was assessed in the graphs of the previous section. And the model was corrected as much as it could be (FB changed from just mean centered to log transformed then mean centered to improve linearity).
+
+#### Robust SEs
+
+```{R}
+library(sandwich)
+coeftest(lm_fit, vcov = vcovHC(lm_fit))
+```
+These effects do not hold up well to robust SEs. All significance has disappeared.
+
+#### R squared discussion.
+With an adjusted R squared of 0.97, this model should explain 97% of the variance in FW. This reeks of overfitting given how much interaction is present and how little statistically strong relationships we have.
+
+### 4) Resampling Residuals
+
+```{R}
+resids <- lm_fit$residuals
+fitted <- lm_fit$fitted.values
+resid_resamp <- replicate(5000, {
+    new_resids <- sample(resids, replace = TRUE)
+    carn_mc$FW_c <- fitted + new_resids
+    fit <- lm(FW_c ~ LS_c*FB_log_c*SB_c*GL_c, data = carn_mc)
+    coef(fit)
+})
+
+resid_resamp %>% t %>% as.data.frame %>% summarize_all(sd)
+```
+We see a slight decrease overall in the standard error, which is strange, but otherwise these results line up well with the non-robust SEs. MUCH lower than the robust SEs.
+
+### 5) Logistic Regression 1
+
+##### Fitting GLM predicting binary variable from FB and GL (in this case, SuperFamily (y=1 ~ SuperFamily=Feliformia))
+
+```{R}
+glm_1_fit <- glm(y ~ FB_log_c*GL_c, data = carn_mc, family = "binomial")
+
+summary(glm_1_fit)
+
+#finding odds for FB_log_c
+exp(-0.298)
+
+#GL_c
+exp(0.0486)
+
+#interaction term
+exp(-0.011839)
+```
+a one gram(unit) increase in FB_log_c multiplies odds by 0.742, a one day(unit) increase in gestation length multiplies odds by 1.0498, and for every one day increase in gestation length, the log-odds slope of FB_log_c decreases by 0.01 (leading to even greater decrease in odds multiplier when converted).
+#### Confusion matrix
+
+```{R}
+probs <- predict(glm_1_fit, type = "response")
+
+table(predict = as.numeric(probs > 0.5), truth = carn_mc$y) %>% 
+    addmargins
+```
+
+#### Density plot of log-odds colored/grouped by binary outcome
+
+```{R}
+carn_mc$logit<-predict(glm_1_fit)
+
+carn_mc_sf <- carn_mc %>% mutate(SuperFamily = case_when(
+  y == 1 ~ "Feliformia",
+  y == 0 ~ "Caniformia"
+)) 
+
+carn_mc_sf %>% ggplot(aes(logit, fill=SuperFamily))+geom_density(alpha=.3)+
+  geom_vline(xintercept=0,lty=2)
+```
+
+#### Classification diagnostics (ACC, TPR, TNR, PPV, and AUC)
+
+```{R}
+#Using the class_diag method from class
+
+class_diag<-function(probs,truth){
+  
+  tab<-table(factor(probs>.5,levels=c("FALSE","TRUE")),truth)
+  acc=sum(diag(tab))/sum(tab)
+  sens=tab[2,2]/colSums(tab)[2]
+  spec=tab[1,1]/colSums(tab)[1]
+  ppv=tab[2,2]/rowSums(tab)[2]
+  
+  if(is.numeric(truth)==FALSE & is.logical(truth)==FALSE) truth<-as.numeric(truth)-1
+  
+  #CALCULATE EXACT AUC
+  ord<-order(probs, decreasing=TRUE)
+  probs <- probs[ord]; truth <- truth[ord]
+  
+  TPR=cumsum(truth)/max(1,sum(truth)) 
+  FPR=cumsum(!truth)/max(1,sum(!truth))
+  
+  dup<-c(probs[-1]>=probs[-length(probs)], FALSE)
+  TPR<-c(0,TPR[!dup],1); FPR<-c(0,FPR[!dup],1)
+  
+  n <- length(TPR)
+  auc<- sum( ((TPR[-1]+TPR[-n])/2) * (FPR[-1]-FPR[-n]) )
+  
+  data.frame(acc,sens,spec,ppv,auc)
+}
+
+class_diag(probs, carn_mc$y)
+```
+
+Our model has an accuracy of 0.68, meaning that it chooses the right answer 68% of the time. It has a true positive rate (sensitivity) of 0.487, making it not very sensitive, a true negative rate of 0.827, a respectable specificity, a precision of 0.679, and an area under the curve of 0.81. Not great, but still pretty good given just two predictors.
+
+#### ROC curve + AUC calculation
+
+```{R}
+library(plotROC)
+carn_mc$prob <- probs
+
+ROCplot <- ggplot(data = carn_mc) + geom_roc(aes(d = y, 
+    m = prob)) + labs(title = "ROC curve")
+ROCplot
+```
+
+```{R}
+calc_auc(ROCplot)
+```
+
+### 6) Logistic Regression 2
+
+#### Fitting the glm w/ more variables (y (SuperFamily) from all other available variables.)
+```{R}
+glm_2_fit <- glm(y ~ FB_log_c+GL_c+FW_c+SW_c+SB_c, data = carn_mc, family = "binomial")
+
+summary(glm_2_fit)
+
+carn_mc$new_probs <- predict(glm_2_fit)
+
+class_diag(probs=carn_mc$new_probs, truth=carn_mc$y)
+
+#determining odds multipliers
+exp(1.24974)
+
+exp(0.04512)
+```
+In this model, there is significance in FB_log_c, GL_c, SW_c, and SB_c. I'll interpret the first two important variables. For FB_log_c, every one unit increase will multiply odds by 3.49 in this model. For GL_c, a one day increase will multiply odds by 1.046. 
+
+Adding these extra variables has added some, but not much, to the AUC/spec of our model. AUC has risen ~0.01 to .815, specificity has risen to 92.3, but sensitivity has dropped to 0.41.
+
+#### Cross-validation
+
+```{R}
+k=10
+
+data1<-carn_mc[sample(nrow(carn_mc)),]
+folds<-cut(seq(1:nrow(carn_mc)),breaks=k,labels=F)
+
+diags<-NULL
+for(i in 1:k){
+  train <- data1[folds!=i,]
+  test <- data1[folds==i,]
+  
+  truth <- test$y
+  
+  fit <- glm(y ~ FB_log_c+GL_c+FW_c+SW_c+SB_c, data = carn_mc, family = "binomial")
+  probs <- predict(fit, newdata=test, type="response")
+  
+  diags <- rbind(diags,class_diag(probs,truth))
+}
+
+summarize_all(diags,mean)
+
+```
+Sensitivity increased, but specificity dropped vs in-sample metrics. AUC is fairly constant, indicative of us not having too much overfitting in the model. Overall very similar to before.
+
+#### LASSO regularization
+
+```{R}
+library(glmnet)
+
+preds <- model.matrix(glm_2_fit)[, -1]
+
+preds[,1] = exp(preds[,1])
+cv <- cv.glmnet(x = preds, y = as.matrix(carn_mc$y), 
+    family = "binomial")
+
+lasso_fit <- glmnet(x = preds, y = as.matrix(carn_mc$y), 
+    family = "binomial", alpha = 1, lambda = cv$lambda.1se)
+coef(lasso_fit)
+
+lasso_probs <- predict(lasso_fit, preds, type = "response")
+
+table(truth = carn_mc$y, prediction = lasso_probs > 0.5) %>% 
+    addmargins
+```
+It seems to think that the only useful variable is GL_c. This model really sucks. It looks like it just chooses false for basically everything.
+
+#### CV on LASSO variables
+
+```{R}
+k=10
+
+data1<-carn_mc[sample(nrow(carn_mc)),]
+folds<-cut(seq(1:nrow(carn_mc)),breaks=k,labels=F)
+
+diags<-NULL
+for(i in 1:k){
+  train <- data1[folds!=i,]
+  test <- data1[folds==i,]
+  
+  truth <- test$y
+  
+  fit <- glm(y ~ GL_c, data = carn_mc, family = "binomial")
+  probs <- predict(fit, newdata=test, type="response")
+  
+  diags <- rbind(diags,class_diag(probs,truth))
+}
+
+summarize_all(diags,mean)
+```
+Despite what we saw in the confusion matrix above, this looks better, actually. AUC is OK (slightly lower), specificity (TNR) is good at mid 0.8s, although mid 0.4s sensitivity (TPR) is pretty bad. I think the fault really comes down to there not being enough data points, as I had to exclude so many variables due to missings that it probably hindered the modeling power of the dataset.
+
+```{R, echo=F}
+## DO NOT DELETE THIS CHUNK!
+sessionInfo()
+Sys.time()
+Sys.info()
+```
