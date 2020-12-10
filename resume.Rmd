@@ -6,9 +6,9 @@ hiderelated: true
 hidediscus: true
 ---
 
-<center style="width:100%">
+<center style="width:600">
 <object data="/resume.pdf" type="application/pdf" >
-<embed src="/resume.pdf" type="application/pdf" style="min-height:200vh;width:100%"/>
+<embed src="/resume.pdf" type="application/pdf" style="min-height:100vh;width:100%"/>
 </object>
 </center>
 
