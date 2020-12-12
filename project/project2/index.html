@@ -350,7 +350,7 @@ real_diff &lt;- carn %&gt;% summarize(mean(FW[Family == &quot;Felidae&quot;]) -
     mean(FW[Family == &quot;Mustelidae&quot;])) %&gt;% pull
 
 mean(diffs &gt; real_diff)</code></pre>
-<pre><code>## [1] 0.007</code></pre>
+<pre><code>## [1] 0.0082</code></pre>
 <p>Randomization has increased the p-value of this comparison to above the bonferroni-corrected 0.00038, although it is still an order of magnitude under 0.05.</p>
 </div>
 <div id="illustrating-the-null-distribution-vs-the-test-variable." class="section level4">
@@ -487,12 +487,12 @@ resid_resamp &lt;- replicate(5000, {
 })
 
 resid_resamp %&gt;% t %&gt;% as.data.frame %&gt;% summarize_all(sd)</code></pre>
-<pre><code>##   (Intercept)     LS_c FB_log_c      SB_c    GL_c LS_c:FB_log_c LS_c:SB_c
-## 1    5.313396 4.194955 8.593997 0.2379143 0.24584      6.585598 0.1873885
+<pre><code>##   (Intercept)     LS_c FB_log_c      SB_c      GL_c LS_c:FB_log_c LS_c:SB_c
+## 1    5.308993 4.186781  8.60193 0.2385428 0.2436654      6.616959 0.1883215
 ##   FB_log_c:SB_c LS_c:GL_c FB_log_c:GL_c  SB_c:GL_c LS_c:FB_log_c:SB_c
-## 1    0.09597479 0.2548417     0.3768817 0.01037092         0.07645679
+## 1    0.09536353 0.2533758     0.3736998 0.01035095         0.07638684
 ##   LS_c:FB_log_c:GL_c LS_c:SB_c:GL_c FB_log_c:SB_c:GL_c LS_c:FB_log_c:SB_c:GL_c
-## 1          0.3570516     0.01005426        0.004494241             0.004715543</code></pre>
+## 1          0.3569785     0.01006218        0.004460094             0.004692655</code></pre>
 <p>We see a slight decrease overall in the standard error, which is strange, but otherwise these results line up well with the non-robust SEs. MUCH lower than the robust SEs.</p>
 </div>
 <div id="logistic-regression-1" class="section level3">
@@ -681,8 +681,8 @@ for (i in 1:k) {
 }
 
 summarize_all(diags, mean)</code></pre>
-<pre><code>##         acc sens      spec       ppv       auc
-## 1 0.7488889 0.67 0.8330952 0.7583333 0.8623175</code></pre>
+<pre><code>##         acc      sens   spec ppv      auc
+## 1 0.7477778 0.6366667 0.8075 NaN 0.800119</code></pre>
 <p>Sensitivity increased, but specificity dropped vs in-sample metrics. AUC is fairly constant, indicative of us not having too much overfitting in the model. Overall very similar to before.</p>
 </div>
 <div id="lasso-regularization" class="section level4">
@@ -737,8 +737,8 @@ for (i in 1:k) {
 }
 
 summarize_all(diags, mean)</code></pre>
-<pre><code>##    acc      sens      spec ppv       auc
-## 1 0.68 0.4114286 0.8890476 NaN 0.8088492</code></pre>
+<pre><code>##         acc      sens      spec   ppv       auc
+## 1 0.6822222 0.4366667 0.8730952 0.775 0.7956508</code></pre>
 <p>Despite what we saw in the confusion matrix above, this looks better, actually. AUC is OK (slightly lower), specificity (TNR) is good at mid 0.8s, although mid 0.4s sensitivity (TPR) is pretty bad. I think the fault really comes down to there not being enough data points, as I had to exclude so many variables due to missings that it probably hindered the modeling power of the dataset.</p>
 <pre><code>## R version 3.6.2 (2019-12-12)
 ## Platform: x86_64-apple-darwin15.6.0 (64-bit)
@@ -781,7 +781,7 @@ summarize_all(diags, mean)</code></pre>
 ## [65] vctrs_0.3.5       foreach_1.5.1     cellranger_1.1.0  gtable_0.3.0     
 ## [69] assertthat_0.2.1  xfun_0.19         openxlsx_4.1.4    broom_0.7.2      
 ## [73] survival_3.1-8    iterators_1.0.13  ellipsis_0.3.0</code></pre>
-<pre><code>## [1] &quot;2020-12-09 20:34:02 CST&quot;</code></pre>
+<pre><code>## [1] &quot;2020-12-09 21:25:21 CST&quot;</code></pre>
 <pre><code>##                                                                                             sysname 
 ##                                                                                            &quot;Darwin&quot; 
 ##                                                                                             release 

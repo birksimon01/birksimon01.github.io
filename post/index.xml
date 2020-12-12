@@ -6,15 +6,15 @@
     <description>Recent content in Posts on Simon Birk</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-US</language>
-    <lastBuildDate>Fri, 04 Dec 2020 00:00:00 +0000</lastBuildDate><atom:link href="/post/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 11 Dec 2020 00:00:00 +0000</lastBuildDate><atom:link href="/post/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>title1</title>
-      <link>/post/2020/12/04/title1/</link>
-      <pubDate>Fri, 04 Dec 2020 00:00:00 +0000</pubDate>
+      <title>Dataset manipulation in python and R with reticulate</title>
+      <link>/post/2020/12/11/dataset-manipulation-in-python-and-r-with-reticulate/</link>
+      <pubDate>Fri, 11 Dec 2020 00:00:00 +0000</pubDate>
       
-      <guid>/post/2020/12/04/title1/</guid>
-      <description>stinky &amp;lt;- 3 Link to project 2
-Link to google</description>
+      <guid>/post/2020/12/11/dataset-manipulation-in-python-and-r-with-reticulate/</guid>
+      <description>Behind-the-scenes dataset manipulation in python for project 1 This is a bit of python work that I used to produce a dataset in the first project. I’ll use the product to illustrate how reticulate works to let python and R collaborate as well.
+Imports and setting the environment library(reticulate) Sys.setenv(RETICULATE_PYTHON = &amp;quot;/Users/simonbirk/Documents/RStudio Scripts/sds348/website/website/python/bin/python&amp;quot;) Sys.which(&amp;quot;python&amp;quot;) ## python ## &amp;quot;/Users/simonbirk/Documents/RStudio Scripts/sds348/website/website/python/bin/python&amp;quot;  Python imports import pandas as pd import numpy as np import requests import urllib import json I used python to create the ETF dataset that I used in project one since one of python’s strengths is slightly more powerful(customizable) data analysis and I’m just more comfortable with it for more complex work.</description>
     </item>
     
   </channel>

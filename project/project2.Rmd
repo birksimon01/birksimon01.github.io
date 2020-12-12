@@ -1,7 +1,7 @@
 ---
 title: "Project 2: Modeling"
 author: "SDS348"
-date: "`r format(Sys.Date(), '%B %d, %Y')`"
+date: "November 25, 2020"
 output:
   html_document:
     toc: true

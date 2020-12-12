@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="Simon Birk" />
+    
+    <link rel="shortcut icon" type="image/x-icon" href="/img/favicon.ico">
+    <title>Dataset manipulation in python and R with reticulate</title>
+    <meta name="generator" content="Hugo 0.79.0" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="/css/main.css" />
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,400,200bold,400old" />
+    
+    <!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+    
+  </head>
+
+  <body>
+    <div id="wrap">
+      
+      <nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="/"><i class="fa fa-home"></i></a>
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <div class="navbar-collapse collapse" id="navbar">
+      <ul class="nav navbar-nav navbar-right">
+      
+        
+        <li><a href="/post/">BLOG</a></li>
+        
+        <li><a href="/projects/">PROJECTS</a></li>
+        
+        <li><a href="/resume/">RESUME</a></li>
+        
+      
+      </ul>
+    </div>
+  </div>
+</nav>
+
+      <div class="container">
+        <div class="blog-post">
+          <h3>
+            <strong><a href="/post/2020/12/11/dataset-manipulation-in-python-and-r-with-reticulate/">Dataset manipulation in python and R with reticulate</a></strong>
+          </h3>
+        </div>
+ 
+<div class="blog-title">
+          <h4>
+         December 11, 2020 
+            &nbsp;&nbsp;
+            
+          </h4>
+        </div>
+
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <div class="blogpost">
+              
+<link href="/rmarkdown-libs/anchor-sections/anchor-sections.css" rel="stylesheet" />
+<script src="/rmarkdown-libs/anchor-sections/anchor-sections.js"></script>
+
+
+<div id="behind-the-scenes-dataset-manipulation-in-python-for-project-1" class="section level1">
+<h1>Behind-the-scenes dataset manipulation in python for project 1</h1>
+<p>This is a bit of python work that I used to produce a dataset in the first project. I’ll use the product to illustrate how reticulate works to let python and R collaborate as well.</p>
+<p><img src="/post/2020-12-11-dataset-manipulation-in-python-and-r-with-reticulate_files/money.jpg" /></p>
+<div id="imports-and-setting-the-environment" class="section level2">
+<h2>Imports and setting the environment</h2>
+<pre class="r"><code>library(reticulate)
+Sys.setenv(RETICULATE_PYTHON = &quot;/Users/simonbirk/Documents/RStudio Scripts/sds348/website/website/python/bin/python&quot;)
+Sys.which(&quot;python&quot;)</code></pre>
+<pre><code>##                                                                                python 
+## &quot;/Users/simonbirk/Documents/RStudio Scripts/sds348/website/website/python/bin/python&quot;</code></pre>
+</div>
+<div id="python-imports" class="section level2">
+<h2>Python imports</h2>
+<pre class="python"><code>import pandas as pd
+import numpy as np
+
+import requests
+import urllib
+import json</code></pre>
+<p>I used python to create the ETF dataset that I used in project one since one of python’s strengths is slightly more powerful(customizable) data analysis and I’m just more comfortable with it for more complex work.</p>
+</div>
+</div>
+<div id="producing-the-dataset-of-etf-holdings" class="section level1">
+<h1>Producing the dataset of ETF holdings</h1>
+<div id="grabbing-our-list-of-funds-to-pull-from" class="section level2">
+<h2>Grabbing our list of funds to pull from</h2>
+<p>taking a peek and ignoring the 14-line header</p>
+<p>I do the first file outside of the loop in order to determine how I should write the function inside the loop (dry run so I can see what’s going on).</p>
+<pre class="python"><code>fund_tickers = [&#39;DIA&#39;, &#39;DIM&#39;, &#39;EEM&#39;, &#39;IHI&#39;, &#39;MGK&#39;, &#39;OGIG&#39;, &#39;SMOG&#39;, &#39;SOXX&#39;, &#39;SPY&#39;, &#39;USMV&#39;, &#39;VIG&#39;, &#39;VOO&#39;, &#39;VOX&#39;, &#39;VTI&#39;, &#39;VTV&#39;, &#39;VUG&#39;, &#39;VYM&#39;, &#39;WCLD&#39;, &#39;XLK&#39;]
+
+def raw_url(ticker):
+  return &quot;https://raw.githubusercontent.com/birksimon01/data/main/&quot; + ticker + &quot;-holdings.csv&quot;
+
+#figuring things out w/ first ticker (DGRW) as example
+fund_holdings = pd.read_csv(&quot;https://raw.githubusercontent.com/birksimon01/data/main/DGRW-holdings.csv&quot;, skiprows=range(0, 13))
+
+fund_holdings[&#39;Fund&#39;] = &#39;DGRW&#39;
+
+data = urllib.request.urlopen(&#39;https://raw.githubusercontent.com/birksimon01/data/main/DGRW-holdings.csv&#39;)
+
+for i in range(0,12):
+  line = data.readline().decode(&#39;UTF-8&#39;,&#39;ignore&#39;)
+  if (i==3):
+    aum1 = line[line.index(&#39;:&#39;)+1:].strip()
+  elif (i==5):
+    expense1 = line[line.index(&#39;:&#39;)+1:].strip()[:-1]
+
+fund_character = [[&#39;DGRW&#39;, int(aum1), float(expense1)]]</code></pre>
+<p>Let’s extract AUM + expense ratio from each csv. Have to do this independently because the website gave it to us in horrible format. I’m shaking my head</p>
+<pre class="python"><code>def get_fund_characteristics (ticker):
+  data = urllib.request.urlopen(raw_url(ticker))
+  for i in range(0,12):
+    line = data.readline().decode(&#39;UTF-8&#39;,&#39;ignore&#39;)
+    if (i==3):
+      aum = line[line.index(&#39;:&#39;)+1:].strip()
+    elif (i==5):
+      expense = line[line.index(&#39;:&#39;)+1:].strip()[:-1]
+  fund_character.append([ticker, int(aum), float(expense)])
+  data.close()</code></pre>
+<p>Iterating through the rest, tagging w/fund ticker, joining holdings to original</p>
+<pre class="python"><code>for ticker in fund_tickers:
+  fund_holdings_add = pd.read_csv(raw_url(ticker), skiprows=range(0,13))
+  fund_holdings_add[&#39;Fund&#39;] = ticker
+  fund_holdings = pd.merge(fund_holdings,fund_holdings_add, how=&quot;outer&quot;)
+  get_fund_characteristics(ticker)
+
+print(fund_holdings.shape)</code></pre>
+<pre><code>## (6494, 4)</code></pre>
+<pre class="python"><code>print(len(fund_character))</code></pre>
+<pre><code>## 20</code></pre>
+<p>Polishing, saving to .csv file</p>
+<pre class="python"><code>fund_data = pd.DataFrame(data=fund_character, columns=[&#39;Fund&#39;, &#39;AUM&#39;, &#39;Expense_ratio&#39;])
+
+fund_data.sort_values(by=&quot;Expense_ratio&quot;)</code></pre>
+<pre><code>##     Fund        AUM  Expense_ratio
+## 14   VTI  161857601         0.0300
+## 12   VOO  159939700         0.0300
+## 16   VUG   60166261         0.0400
+## 15   VTV   50578353         0.0400
+## 17   VYM   26210954         0.0600
+## 11   VIG   47256171         0.0600
+## 5    MGK    9332850         0.0700
+## 9    SPY  290672951         0.0945
+## 13   VOX    2590756         0.1000
+## 19   XLK   33742935         0.1300
+## 10  USMV   33804662         0.1500
+## 1    DIA   22816486         0.1600
+## 0   DGRW    4432345         0.2800
+## 4    IHI    8103370         0.4300
+## 18  WCLD     798268         0.4500
+## 8   SOXX    3682192         0.4600
+## 6   OGIG     406029         0.4800
+## 2    DIM     151884         0.5800
+## 7   SMOG     154968         0.6300
+## 3    EEM   23336744         0.6800</code></pre>
+<pre class="python"><code>fund_data.head()
+
+#showing line, but not saving for blog purposes
+#pd.DataFrame.to_csv(fund_data, path_or_buf=&#39;/fund_data.csv&#39;)</code></pre>
+<pre><code>##    Fund       AUM  Expense_ratio
+## 0  DGRW   4432345           0.28
+## 1   DIA  22816486           0.16
+## 2   DIM    151884           0.58
+## 3   EEM  23336744           0.68
+## 4   IHI   8103370           0.43</code></pre>
+<pre class="python"><code>fund_holdings.head()
+
+#showing line, but not saving for blog purposes
+#pd.DataFrame.to_csv(fund_holdings, path_or_buf=&#39;/fund_holdings.csv&#39;)</code></pre>
+<pre><code>##                       Holding Symbol Weighting  Fund
+## 0                   Apple Inc   AAPL   6.8741%  DGRW
+## 1              Microsoft Corp   MSFT   5.5614%  DGRW
+## 2  Verizon Communications Inc     VZ   5.3443%  DGRW
+## 3         Procter &amp; Gamble Co     PG   4.4253%  DGRW
+## 4              Merck &amp; Co Inc    MRK   3.1033%  DGRW</code></pre>
+</div>
+<div id="reading-back-variables-to-r" class="section level2">
+<h2>Reading back variables to R</h2>
+<p>We use py$<variable> to denote when we are grabbing stuff in R that we set in our python environment when using reticulate. Very simple</p>
+<pre class="r"><code>library(tidyverse)</code></pre>
+<pre><code>## ── Attaching packages ───────────────────────────────────────────────────────────────────────── tidyverse 1.3.0 ──</code></pre>
+<pre><code>## ✓ ggplot2 3.3.2     ✓ purrr   0.3.3
+## ✓ tibble  3.0.4     ✓ dplyr   1.0.2
+## ✓ tidyr   1.1.2     ✓ stringr 1.4.0
+## ✓ readr   1.3.1     ✓ forcats 0.5.0</code></pre>
+<pre><code>## ── Conflicts ──────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()</code></pre>
+<pre class="r"><code>fund_holdings_r &lt;- py$fund_holdings
+
+fund_holdings_r %&gt;% head()</code></pre>
+<pre><code>##                      Holding Symbol Weighting Fund
+## 0                  Apple Inc   AAPL   6.8741% DGRW
+## 1             Microsoft Corp   MSFT   5.5614% DGRW
+## 2 Verizon Communications Inc     VZ   5.3443% DGRW
+## 3        Procter &amp; Gamble Co     PG   4.4253% DGRW
+## 4             Merck &amp; Co Inc    MRK   3.1033% DGRW
+## 5                PepsiCo Inc    PEP   2.8774% DGRW</code></pre>
+<pre class="r"><code># the rest of your fun, data-science-related endeavors continue from here</code></pre>
+</div>
+</div>
+
+            
+        <hr>         <div class="related-posts">
+                <h5>Related Posts</h5>
+                
+              </div> 
+            </div>
+          </div>
+
+   <hr>  <div class="disqus">
+  <div id="disqus_thread"></div>
+  <script type="text/javascript">
+
+    (function() {
+      
+      
+      if (window.location.hostname == "localhost")
+        return;
+
+      var disqus_shortname = '';
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  <a href="http://disqus.com/" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div> 
+        </div>
+      </div>
+    </div>
+
+    
+    <footer>
+  <div id="footer">
+    <div class="container">
+      <p class="text-muted">&copy; All rights reserved. Powered by <a href="https://gohugo.io/">Hugo</a> and
+      <a href="http://www.github.com/nurlansu/hugo-sustain/">sustain</a> with ♥</p>
+    </div>
+  </div>
+</footer>
+<div class="footer"></div>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="/js/docs.min.js"></script>
+<script src="/js/main.js"></script>
+
+<script src="/js/ie10-viewport-bug-workaround.js"></script>
+
+
+    
+  </body>
+</html>

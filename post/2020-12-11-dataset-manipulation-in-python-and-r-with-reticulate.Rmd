@@ -1,0 +1,124 @@
+---
+title: Dataset manipulation in python and R with reticulate
+author: Simon Birk
+date: '2020-12-11'
+slug: dataset-manipulation-in-python-and-r-with-reticulate
+categories: []
+tags: []
+description: ''
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Behind-the-scenes dataset manipulation in python for project 1
+This is a bit of python work that I used to produce a dataset in the first project. I'll use the product to illustrate how reticulate works to let python and R collaborate as well.
+
+![](/post/2020-12-11-dataset-manipulation-in-python-and-r-with-reticulate_files/money.jpg)
+
+## Imports and setting the environment
+```{R}
+library(reticulate)
+Sys.setenv(RETICULATE_PYTHON = "/Users/simonbirk/Documents/RStudio Scripts/sds348/website/website/python/bin/python")
+Sys.which("python")
+```
+
+## Python imports
+```{python}
+import pandas as pd
+import numpy as np
+
+import requests
+import urllib
+import json
+```
+
+I used python to create the ETF dataset that I used in project one since one of python's strengths is slightly more powerful(customizable) data analysis and I'm just more comfortable with it for more complex work.
+
+# Producing the dataset of ETF holdings
+
+## Grabbing our list of funds to pull from
+
+taking a peek and ignoring the 14-line header
+
+I do the first file outside of the loop in order to determine how I should write the function inside the loop (dry run so I can see what's going on).
+
+```{python}
+fund_tickers = ['DIA', 'DIM', 'EEM', 'IHI', 'MGK', 'OGIG', 'SMOG', 'SOXX', 'SPY', 'USMV', 'VIG', 'VOO', 'VOX', 'VTI', 'VTV', 'VUG', 'VYM', 'WCLD', 'XLK']
+
+def raw_url(ticker):
+  return "https://raw.githubusercontent.com/birksimon01/data/main/" + ticker + "-holdings.csv"
+
+#figuring things out w/ first ticker (DGRW) as example
+fund_holdings = pd.read_csv("https://raw.githubusercontent.com/birksimon01/data/main/DGRW-holdings.csv", skiprows=range(0, 13))
+
+fund_holdings['Fund'] = 'DGRW'
+
+data = urllib.request.urlopen('https://raw.githubusercontent.com/birksimon01/data/main/DGRW-holdings.csv')
+
+for i in range(0,12):
+  line = data.readline().decode('UTF-8','ignore')
+  if (i==3):
+    aum1 = line[line.index(':')+1:].strip()
+  elif (i==5):
+    expense1 = line[line.index(':')+1:].strip()[:-1]
+
+fund_character = [['DGRW', int(aum1), float(expense1)]]
+```
+Let's extract AUM + expense ratio from each csv. Have to do this independently because the website gave it to us in horrible format. I'm shaking my head
+```{python}
+def get_fund_characteristics (ticker):
+  data = urllib.request.urlopen(raw_url(ticker))
+  for i in range(0,12):
+    line = data.readline().decode('UTF-8','ignore')
+    if (i==3):
+      aum = line[line.index(':')+1:].strip()
+    elif (i==5):
+      expense = line[line.index(':')+1:].strip()[:-1]
+  fund_character.append([ticker, int(aum), float(expense)])
+  data.close()
+```
+Iterating through the rest, tagging w/fund ticker, joining holdings to original
+```{python}
+for ticker in fund_tickers:
+  fund_holdings_add = pd.read_csv(raw_url(ticker), skiprows=range(0,13))
+  fund_holdings_add['Fund'] = ticker
+  fund_holdings = pd.merge(fund_holdings,fund_holdings_add, how="outer")
+  get_fund_characteristics(ticker)
+
+print(fund_holdings.shape)
+
+print(len(fund_character))
+```
+Polishing, saving to .csv file
+```{python}
+fund_data = pd.DataFrame(data=fund_character, columns=['Fund', 'AUM', 'Expense_ratio'])
+
+fund_data.sort_values(by="Expense_ratio")
+
+fund_data.head()
+
+#showing line, but not saving for blog purposes
+#pd.DataFrame.to_csv(fund_data, path_or_buf='/fund_data.csv')
+```
+
+```{python}
+fund_holdings.head()
+
+#showing line, but not saving for blog purposes
+#pd.DataFrame.to_csv(fund_holdings, path_or_buf='/fund_holdings.csv')
+```
+
+## Reading back variables to R
+
+We use py$<variable> to denote when we are grabbing stuff in R that we set in our python environment when using reticulate. Very simple
+
+```{R}
+library(tidyverse)
+fund_holdings_r <- py$fund_holdings
+
+fund_holdings_r %>% head()
+
+# the rest of your fun, data-science-related endeavors continue from here
+```
