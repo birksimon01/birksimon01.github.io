@@ -17,7 +17,7 @@ knitr::opts_chunk$set(echo = TRUE, eval = TRUE, fig.align = "center", warning = 
 tidy=TRUE, tidy.opts=list(width.cutoff=60), R.options=list(max.print=100))
 ```
 
-#Simon Birk SLB4868
+# Simon Birk SLB4868
 
 ## Data Wrangling and Data Exploration
 
